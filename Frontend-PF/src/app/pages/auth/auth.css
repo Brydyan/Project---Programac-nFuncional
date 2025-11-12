@@ -1,0 +1,316 @@
+:host {
+  display: flex; /* Usar flex para centrar */
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(145deg, #a5a8ff, #c1c3ff);
+  overflow: hidden;
+}
+
+.container {
+  position: relative;
+  width: 1150px;
+  height: 800px;
+  margin: 1rem; /* Margen de seguridad */
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  display: flex;
+  transition: transform 0.8s ease-in-out;
+}
+
+/* --- Paneles principales (mitades del contenedor) --- */
+.panel {
+  width: 50%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  position: relative;
+  transition: all 0.7s ease-in-out;
+  overflow: hidden;
+}
+
+.left-panel {
+  background-color: #31334A;
+}
+
+.right-panel {
+  background-color: #4A4E91;
+}
+
+/* --- CLAVE: Contenedor del formulario y Contenido de texto --- */
+/* Ambos deben ser absolutos para apilarse en el mismo panel */
+.form-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  /* --- CAMBIOS AQUÍ --- */
+  justify-content: center; 
+  overflow-y: auto;         
+  padding-top: 2.5rem;      
+  padding-bottom: 2.5rem;   
+  padding-left: 2rem;
+  padding-right: 2rem;
+  /* --- FIN DE CAMBIOS --- */
+
+  align-items: center;
+  transition: all 0.7s ease-in-out;
+  box-sizing: border-box;
+}
+
+/* 2. Contenido de Bienvenida (CENTRADO) */
+.content {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* <-- Este SÍ va centrado */
+  align-items: center;
+  transition: all 0.7s ease-in-out;
+  padding: 2rem;
+  box-sizing: border-box;
+  text-align: center;
+  z-index: 2; /* El contenido está por defecto "encima" */
+}
+
+/* --- Estilos del formulario (como lo tenías) --- */
+app-login, app-register, app-forgot-password{
+  background-color: #1e1f33;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
+  width: 80%;
+  max-width: 340px;
+  /* La transición se manejará en el .form-container */
+}
+
+/* ... (Aquí van tus estilos de h1, h3, p, btn) ... */
+.logo-icon {
+  font-size: 1.5rem;
+}
+h1 {
+  margin: 0.2rem 0 0.6rem;
+  font-weight: 700;
+  font-size: 1.8rem;
+  color: #a7abff;
+}
+h3 {
+  margin: 0 0 1rem;
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: white;
+}
+p {
+  font-weight: 400;
+  font-size: 1rem;
+  color: #C1C4EE;
+  margin-bottom: 2rem;
+}
+.btn {
+  background-color: #6B70E6;
+  border: none;
+  border-radius: 24px;
+  padding: 12px 36px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.btn:hover {
+  background-color: #565ddd;
+}
+
+
+
+/* Panel Izquierdo (Muestra contenido "Hola Bienvenido") */
+.left-panel .content {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+.left-panel .form-container {
+  opacity: 0;
+  transform: translateX(-50px);
+  pointer-events: none;
+}
+
+/* Panel Derecho (Muestra formulario "Iniciar Sesión") */
+.right-panel .content {
+  opacity: 0;
+  transform: translateX(50px);
+  pointer-events: none;
+}
+.right-panel .form-container {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+
+
+/* --- ESTADO DE REGISTRO (.register-mode) --- */
+
+/* Panel Izquierdo (Muestra formulario "Crear Cuenta") */
+.container.register-mode .left-panel .content {
+  opacity: 0;
+  transform: translateX(-50px);
+  pointer-events: none;
+}
+.container.register-mode .left-panel .form-container {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+
+/* Panel Derecho (Muestra contenido "Bienvenido de vuelta") */
+.container.register-mode .right-panel .content {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+.container.register-mode .right-panel .form-container {
+  opacity: 0;
+  transform: translateX(50px);
+  pointer-events: none;
+}
+
+
+/* --- Animaciones tipo carrusel (Esto estaba bien) --- */
+.container.register-mode .left-panel {
+  transform: translateX(100%);
+}
+.container.register-mode .right-panel {
+  transform: translateX(-100%);
+}
+
+
+/* --- Responsivo (Esto estaba bien) --- */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    width: 90%;
+    height: auto;
+  }
+
+  .panel {
+    width: 100%;
+    height: auto;
+    transform: none !important;
+  }
+
+  /* En móvil, simplemente ocultamos el panel que no se usa */
+  .container:not(.register-mode) .left-panel,
+  .container.register-mode .right-panel {
+    display: none;
+  }
+
+  /* Y nos aseguramos que el contenido y formulario sean estáticos */
+  .form-container,
+  .content {
+    position: relative;
+    transform: none !important;
+    opacity: 1 !important;
+    pointer-events: all !important;
+  }
+
+  /* En móvil, solo mostramos uno a la vez */
+  .panel .form-container {
+    display: none; 
+  }
+  .panel .content {
+    display: flex; 
+    padding: 3rem 1rem;
+  }
+
+  /* Mostramos el formulario activo y ocultamos su contenido */
+ .container:not(.register-mode) .right-panel .form-container app-login {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+.container:not(.register-mode) .right-panel .form-container app-forgot-password {
+  opacity: 0;
+  transform: translateX(-40px); 
+  pointer-events: none;
+}
+
+  app-login, app-register {
+    width: 100%;
+  }
+}
+/* Posiciona ambos formularios en el mismo lugar */
+.right-panel .form-container app-login,
+.right-panel .form-container app-forgot-password {
+  position: absolute;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  width: 80%; 
+  max-width: 340px; 
+}
+
+/* --- ESTADO POR DEFECTO (Login) --- */
+.right-panel .form-container app-login {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+.right-panel .form-container app-forgot-password {
+  opacity: 0;
+  transform: translateX(-30px);
+  pointer-events: none;
+}
+
+/* --- ESTADO FORGOT-MODE --- */
+.container.forgot-mode .right-panel .form-container app-login {
+  opacity: 0;
+  transform: translateX(30px);
+  pointer-events: none;
+}
+.container.forgot-mode .right-panel .form-container app-forgot-password {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+
+.container:not(.register-mode)[ng-reflect-mode="forgot"] .right-panel .form-container app-login {
+  opacity: 0;
+  transform: translateX(40px); 
+  pointer-events: none;
+}
+.container:not(.register-mode)[ng-reflect-mode="forgot"] .right-panel .form-container app-forgot-password {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+
+/* El modo "Forgot" usa la misma animación de panel
+  deslizante que el modo "Register"
+*/
+.container.forgot-mode .left-panel {
+  transform: translateX(100%);
+}
+.container.forgot-mode .right-panel {
+  transform: translateX(-100%);
+}
+
+/* Y también oculta el formulario de registro y muestra 
+  el contenido del panel izquierdo
+*/
+.container.forgot-mode .left-panel .content {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+.container.forgot-mode .left-panel .form-container {
+  opacity: 0;
+  transform: translateX(-50px);
+  pointer-events: none;
+}
+
