@@ -1,13 +1,13 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common'; // <-- Importar
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms'; // <-- Importar
-
+import { HttpClient } from '@angular/common/http';
 @Component({
   selector: 'app-login',
   standalone: true, 
   imports: [
     CommonModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
   ], 
   templateUrl: './login.html',
   styleUrls: ['./login.scss'] 
@@ -17,7 +17,7 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   showPassword = false;
 
-  constructor(private fb: FormBuilder) { }
+  constructor(private fb: FormBuilder, private http: HttpClient) { }
 
   ngOnInit(): void {
     this.loginForm = this.fb.group({
@@ -31,12 +31,26 @@ export class LoginComponent implements OnInit {
   }
 
   onLoginSubmit(): void {
-    if (this.loginForm.valid) {
-      console.log('Login data:', this.loginForm.value);
-    } else {
-      this.loginForm.markAllAsTouched();
-    }
+  if (this.loginForm.valid) {
+    
+    // 🎯 URL FINAL CORREGIDA
+    const loginUrl = '/api/auth/login'; 
+    
+    this.http.post(loginUrl, this.loginForm.value).subscribe({
+      next: (response) => {
+        console.log('Login exitoso:', response);
+        // Aquí debes guardar el token (si existe) y redirigir al usuario
+      },
+      error: (err) => {
+        console.error('Error de login:', err);
+        // Muestra un mensaje de error en la UI (e.g., credenciales incorrectas)
+      }
+    });
+    
+  } else {
+    this.loginForm.markAllAsTouched();
   }
+}
   onForgotPassword(): void {
     console.log('Emitiendo evento forgot'); //para depurar
     this.changeMode.emit('forgot');
