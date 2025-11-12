@@ -1,0 +1,48 @@
+services:
+  
+  # --- TU SERVICIO DE BACKEND ---
+  backend:
+    build: ./backend
+    container_name: mi_backend
+    ports:
+      - "3000:3000" # O el puerto de tu backend (ej. 8080 para Java)
+    environment:
+      - MONGO_URL=mongodb://root:mi_clave_secreta@mongodb:27017/
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - mongodb
+      - redis
+
+  # --- TU SERVICIO DE FRONTEND ---
+  frontend:
+    build: ./Frontend-PF
+    container_name: mi_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  # --- SERVICIOS DE DATOS ---
+  mongodb:
+    image: mongo:latest  # Imagen oficial y gratuita
+    container_name: mi_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      # AQUÍ ESTÁ EL CAMBIO:
+      # Usa una ruta relativa a una carpeta local
+      - ./backend/mongo-data:/data/db 
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=mi_clave_secreta
+
+  redis:
+    image: redis:alpine  # Imagen oficial, gratuita y ligera
+    container_name: mi_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      # AQUÍ ESTÁ EL CAMBIO:
+      # Usa una ruta relativa a una carpeta local
+      - ./backend/redis-data:/data 
