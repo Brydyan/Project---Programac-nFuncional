@@ -1,0 +1,161 @@
+/* ======================================== */
+/* --- Variables de Color (YARG Flow) --- */
+/* ======================================== */
+$bg-color: #161824;
+$container-bg: #222436;
+$input-bg: #3b3d50;
+$primary-color: #7e78d2;
+$text-primary: #ffffff;
+$text-secondary: #a0a0b8;
+$error-color: #ff6b6b;
+$border-radius: 12px;
+
+/* ======================================== */
+/* --- Estilo :host para centrar --- */
+/* ======================================== */
+:host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: $bg-color;
+  font-family: 'Poppins', 'Arial', sans-serif;
+}
+
+/* ======================================== */
+/* --- Contenedor Principal de Auth --- */
+/* ======================================== */
+.auth-container {
+  background-color: $container-bg;
+  padding: 2.5rem 3rem;
+  border-radius: $border-radius;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  max-width: 420px;
+  color: $text-primary;
+  box-sizing: border-box;
+}
+
+/* ======================================== */
+/* --- Cabecera (Logo y Títulos) --- */
+/* ======================================== */
+.logo-container {
+  text-align: center;
+  margin-bottom: 2.5rem;
+
+  h1 {
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: $text-secondary;
+    font-size: 0.95rem;
+  }
+}
+
+/* ======================================== */
+/* --- Estilos del Formulario --- */
+/* ======================================== */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+
+  label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: $text-secondary;
+    margin-bottom: 0.5rem;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    background-color: $input-bg;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    color: $text-primary;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+
+    &::placeholder {
+      color: #77788a;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+    }
+  }
+}
+
+/* --- ESTILO ESPECÍFICO DE REGISTER (Corregido) --- */
+.date-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+
+  input {
+    text-align: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+/* ======================================== */
+/* --- Botones y Enlaces Inferiores --- */
+/* ======================================== */
+button[type="submit"] {
+  background-color: $primary-color;
+  color: $text-primary;
+  border: none;
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 1rem;
+
+  &:hover {
+    background-color: lighten($primary-color, 5%);
+  }
+
+  &:disabled {
+    background-color: lighten($input-bg, 5%);
+    color: $text-secondary;
+    cursor: not-allowed;
+  }
+}
+
+.error-message {
+  color: $error-color;
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+  margin-left: 0.2rem;
+}
+
+.footer-link {
+  text-align: center;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  color: $text-secondary;
+
+  a {
+    color: $primary-color;
+    text-decoration: none;
+    font-weight: 600;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
