@@ -1,0 +1,35 @@
+<div class="container" 
+     [class.register-mode]="mode === 'register'"
+     [class.forgot-mode]="mode === 'forgot'">
+
+  <div class="panel left-panel">
+    
+    <div class="content">
+      <h1><span class="logo-icon">💬</span> YARG Flow</h1>
+      <h3>Hola, Bienvenido</h3>
+      <p>¿No tiene una cuenta?</p>
+      <button class="btn" (click)="setMode('register')">Regístrese</button>
+    </div>
+
+    <div class="form-container">
+      <app-register (changeMode)="setMode($event)"></app-register>
+    </div>
+
+  </div>
+
+  <div class="panel right-panel">
+    
+    <div class="content">
+      <h1><span class="logo-icon">💬</span> YARG Flow</h1>
+      <h3>Bienvenido de vuelta</h3>
+      <p>¿Ya tiene una cuenta?</p>
+      <button class="btn" (click)="setMode('login')">Login</button>
+    </div>
+
+    <div class="form-container">
+      <app-login *ngIf="mode === 'login'" (changeMode)="setMode($event)"></app-login>
+      <app-forgot-password *ngIf="mode === 'forgot'" (changeMode)="setMode($event)"></app-forgot-password>
+    </div>
+  </div>
+
+</div>

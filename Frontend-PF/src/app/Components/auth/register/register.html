@@ -1,0 +1,94 @@
+<form [formGroup]="registerForm" (ngSubmit)="onRegisterSubmit()" novalidate>
+  
+  <div class="logo-container">
+    <h1><span class="logo-icon">💬</span> YARG Flow</h1>
+    <h2 class="form-title">Crear una cuenta</h2>
+  </div>
+
+  <div class="form-group">
+    <label for="email">Correo electrónico</label>
+    <input
+      id="email"
+      formControlName="email"
+      type="email"
+      placeholder="correo@ejemplo.com"
+      autocomplete="email"
+    />
+    @if (email?.invalid && email?.touched) {
+      <div class="error-message">
+        Correo electrónico inválido.
+      </div>
+    }
+  </div>
+
+  <div class="form-group">
+    <label for="nombre">Nombre</label>
+    <input
+      id="nombre"
+      formControlName="nombre"
+      type="text"
+      placeholder="Tu nombre completo"
+    />
+  </div>
+
+  <div class="form-group">
+    <label for="alias">Alias</label>
+    <input
+      id="alias"
+      formControlName="alias"
+      type="text"
+      placeholder="Tu alias o apodo"
+      autocomplete="username"
+    />
+  </div>
+
+  <div class="form-group">
+    <label for="password">Contraseña</label>
+    <input
+      id="password"
+      [type]="showPassword ? 'text' : 'password'"
+      formControlName="password"
+      placeholder="Contraseña"
+      autocomplete="new-password"
+    />
+    @if (password?.invalid && password?.touched) {
+      <div class="error-message">
+        La contraseña es requerida.
+      </div>
+    }
+  </div>
+
+  <div class="form-group">
+    <label for="confirmPassword">Confirmar Contraseña</label>
+    <input
+      id="confirmPassword"
+      [type]="showPassword ? 'text' : 'password'"
+      formControlName="confirmPassword"
+      placeholder="Confirmar Contraseña"
+      autocomplete="new-password"
+    />
+    @if (registerForm.hasError('mismatch') && confirmPassword?.touched) {
+      <div class="error-message">
+        Las contraseñas no coinciden.
+      </div>
+    }
+  </div>
+  
+  <label class="checkbox-label">
+    <input type="checkbox" (change)="toggleShowPassword()" /> Mostrar Contraseña
+  </label>
+  <div class="form-group">
+    <label>Fecha de nacimiento</label>
+    <div class="date-group">
+      <input formControlName="day" type="text" placeholder="dd" maxlength="2" />
+      <input formControlName="month" type="text" placeholder="mm" maxlength="2" />
+      <input formControlName="year" type="text" placeholder="aa" maxlength="4" />
+    </div>
+  </div>
+
+  <button type="submit" [disabled]="registerForm.invalid">
+    Registrar cuenta
+  </button>
+
+
+</form>

@@ -1,0 +1,57 @@
+<form [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()" novalidate>
+  
+  <div class="logo-container">
+    <h1><span class="logo-icon">💬</span> YARG Flow</h1>
+    <h2 class="form-title">Iniciar sesión</h2>
+  </div>
+
+  <div class="form-group">
+    <label for="email">Correo electrónico</label>
+    <input
+      id="email"
+      formControlName="email"
+      type="email"
+      placeholder="correo@ejemplo.com"
+      autocomplete="email"
+    />
+    @if (email?.invalid && email?.touched) {
+      <div class="error-message">
+        Correo electrónico inválido.
+      </div>
+    }
+  </div>
+
+  <div class="form-group">
+    
+    <div class="label-row">
+      <label for="password">Contraseña</label>
+      <a class="forgot-password-link" (click)="onForgotPassword()">¿Olvidó su contraseña?</a>
+    </div>
+
+    <input
+      id="password"
+      [type]="showPassword ? 'text' : 'password'"
+      formControlName="password"
+      placeholder="••••••••"
+      autocomplete="current-password"
+    />
+    @if (password?.invalid && password?.touched) {
+      <div class="error-message">
+        La contraseña es requerida.
+      </div>
+    }
+  </div>
+  <label class="checkbox-label">
+    <input type="checkbox" (change)="toggleShowPassword()" /> Mostrar Contraseña
+  </label>
+
+  <button type="submit" [disabled]="loginForm.invalid">
+    Iniciar Sesión
+  </button>
+  
+  <div class="footer-link">
+    ¿No tienes una Cuenta? <a (click)="onGoToRegister()">Regístrate</a>
+  </div>
+
+
+</form>
