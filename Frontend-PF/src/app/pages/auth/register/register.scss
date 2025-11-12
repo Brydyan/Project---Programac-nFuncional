@@ -17,9 +17,10 @@ $border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  height: 100vh;
   background-color: $bg-color;
-  font-family: 'Poppins', 'Arial', sans-serif;
+  padding: 1rem; // evita que se corte en pantallas pequeñas
+  box-sizing: border-box;
 }
 
 /* ======================================== */
@@ -100,14 +101,24 @@ form {
 
 /* --- ESTILO ESPECÍFICO DE REGISTER (Corregido) --- */
 .date-group {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
 
   input {
+    width: 100%;
     text-align: center;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    background-color: $input-bg;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 0.9rem 0.5rem;
+    color: $text-primary;
+    transition: border-color 0.2s ease;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+    }
   }
 }
 

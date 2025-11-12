@@ -1,47 +1,48 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router'; // <-- Importante para el enlace
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-register',
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    RouterLink // <-- Añadir aquí
+    RouterLink
   ],
   templateUrl: './register.html',
-  styleUrls: ['./register.scss'] // Puedes usar el mismo SCSS si quieres
+  styleUrls: ['./register.scss']
 })
 export class RegisterComponent implements OnInit {
 
-  registerForm: FormGroup;
+  registerForm!: FormGroup;
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder) {}
+
+  ngOnInit(): void {
     this.registerForm = this.fb.group({
-      nombre: ['', [Validators.required]],
-      alias: ['', [Validators.required]],
+      nombre: ['', Validators.required],
+      alias: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
       fechaNacimiento: this.fb.group({
-        dd: ['', [Validators.required, Validators.maxLength(2)]],
-        mm: ['', [Validators.required, Validators.maxLength(2)]],
-        aa: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(4)]]
+        dd: ['', [Validators.required, Validators.pattern('^[0-9]{1,2}$')]],
+        mm: ['', [Validators.required, Validators.pattern('^[0-9]{1,2}$')]],
+        aa: ['', [Validators.required, Validators.pattern('^[0-9]{4}$')]]
       })
     });
   }
-  
-  ngOnInit(): void { }
 
   onRegisterSubmit(): void {
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
       return;
     }
-    console.log('Register Submit:', this.registerForm.value);
-    // Aquí iría tu lógica de registro
+
+    console.log('✅ Formulario válido:', this.registerForm.value);
+    // Aquí puedes llamar a tu servicio de registro o API
   }
 
-  // Getters para el formulario de registro
+  // === Getters para acceder fácilmente a los campos ===
   get regNombre() { return this.registerForm.get('nombre'); }
   get regAlias() { return this.registerForm.get('alias'); }
   get regEmail() { return this.registerForm.get('email'); }
