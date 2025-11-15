@@ -30,4 +30,22 @@ public class UserEntity {
     private String status; // ONLINE, OFFLINE, AWAY
     // Subdocumento embebido
     private Map<String, Object> preferences; // Ejemplo: { "theme": "dark", "notifications": true }
+    
+    // Campos adicionales para mapeo con frontend
+    private String alias; // Sinónimo de username
+    private String nombre; // Sinónimo de displayName
+    private String confirmPassword; // Solo para validación, no se guarda
+    private String day;
+    private String month;
+    private String year;
+    
+    // Método auxiliar para asignar username desde alias si es necesario
+    public void processAliasAndNombre() {
+        if (this.alias != null && !this.alias.isEmpty() && this.username == null) {
+            this.username = this.alias;
+        }
+        if (this.nombre != null && !this.nombre.isEmpty() && this.displayName == null) {
+            this.displayName = this.nombre;
+        }
+    }
 }

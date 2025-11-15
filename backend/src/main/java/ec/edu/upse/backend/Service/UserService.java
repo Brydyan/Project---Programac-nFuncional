@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import ec.edu.upse.backend.Domain.UserValidator;
@@ -17,6 +18,9 @@ public class UserService {
 
     // CREATE
     public UserEntity save(UserEntity user) {
+        // Mapear alias → username y nombre → displayName si es necesario
+        user.processAliasAndNombre();
+        
         String normalizedUsername = UserValidator.normalizarUsername(user.getUsername());
         String normalizedEmail = UserValidator.normalizarEmail(user.getEmail());
 
@@ -29,6 +33,25 @@ public class UserService {
 
         user.setUsername(normalizedUsername);
         user.setEmail(normalizedEmail);
+
+        // Validar y hashear la contraseña antes de guardar
+        String plain = user.getPassword();
+        if (plain == null || plain.trim().isEmpty()) {
+            throw new IllegalArgumentException("Password inválida");
+        }
+        if (plain.length() < 8) {
+            throw new IllegalArgumentException("Password demasiado corta (mínimo 8 caracteres)");
+        }
+        // Requerir al menos una mayúscula, un número y un carácter especial
+        String pwRegex = ".*(?=.*[A-Z]).*"; // must contain uppercase
+        String numRegex = ".*(?=.*\\d).*"; // must contain digit
+        String specialRegex = ".*(?=.*[@$!%*?&\\-_.:,;#\\(\\)\\[\\]{}\\+\\=\\|\\/~`\\^\\\\]).*"; // allow many specials
+        if (!plain.matches(pwRegex) || !plain.matches(numRegex) || !plain.matches(specialRegex)) {
+            throw new IllegalArgumentException("Password débil: requiere mayúscula, número y carácter especial");
+        }
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        String hashed = encoder.encode(plain);
+        user.setPassword(hashed);
 
         return userRepository.save(user);
     }
@@ -44,6 +67,10 @@ public class UserService {
 
     public Optional<UserEntity> getUserByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    public Optional<UserEntity> getUserByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     // UPDATE
@@ -69,6 +96,23 @@ public class UserService {
             existing.setEmail(normalizedEmail);
             existing.setStatus(newUser.getStatus());
             existing.setPreferences(newUser.getPreferences());
+
+            // Si se proporciona una nueva contraseña, hashearla antes de actualizar
+            String newPlain = newUser.getPassword();
+            if (newPlain != null && !newPlain.trim().isEmpty()) {
+                if (newPlain.length() < 8) {
+                    throw new IllegalArgumentException("Password demasiado corta (mínimo 8 caracteres)");
+                }
+                // Validación de fuerza similar a save()
+                String pwRegex = ".*(?=.*[A-Z]).*"; // must contain uppercase
+                String numRegex = ".*(?=.*\\d).*"; // must contain digit
+                String specialRegex = ".*(?=.*[@$!%*?&\\-_.:,;#\\(\\)\\[\\]{}\\+\\=\\|\\/~`\\^\\\\]).*";
+                if (!newPlain.matches(pwRegex) || !newPlain.matches(numRegex) || !newPlain.matches(specialRegex)) {
+                    throw new IllegalArgumentException("Password débil: requiere mayúscula, número y carácter especial");
+                }
+                BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+                existing.setPassword(encoder.encode(newPlain));
+            }
 
             return userRepository.save(existing);
         }

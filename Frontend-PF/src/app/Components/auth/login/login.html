@@ -45,9 +45,11 @@
     <input type="checkbox" (change)="toggleShowPassword()" /> Mostrar Contraseña
   </label>
 
-  <button type="submit" [disabled]="loginForm.invalid">
+  <button type="submit" [disabled]="loginForm.invalid || isLoading">
     Iniciar Sesión
   </button>
+  <div *ngIf="isLoading" class="info-message">Enviando...</div>
+  <div *ngIf="message" class="info-message">{{ message }}</div>
   
   <div class="footer-link">
     ¿No tienes una Cuenta? <a (click)="onGoToRegister()">Regístrate</a>

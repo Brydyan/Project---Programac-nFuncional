@@ -1,29 +1,29 @@
 package ec.edu.upse.backend.Services;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import ec.edu.upse.backend.Entity.UserEntity;
 import ec.edu.upse.backend.Repository.UserRepository;
@@ -45,6 +45,7 @@ class UserServiceTest {
         user.setId("1");
         user.setUsername("Juan_123"); // username válido
         user.setEmail("juan@example.com"); // email válido
+        user.setPassword("Password123!"); // contraseña válida (mínimo 8, mayúscula, número, especial)
 
         // después de normalizar debería quedar en minúsculas
         when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -54,6 +55,27 @@ class UserServiceTest {
         assertNotNull(result);
         assertEquals("juan_123", result.getUsername()); // normalizado a minúsculas
         assertEquals("juan@example.com", result.getEmail()); // normalizado
+        verify(userRepository).save(any(UserEntity.class));
+    }
+
+    @Test
+    void save_passwordIsHashed() {
+        UserEntity user = new UserEntity();
+        user.setId("99");
+        user.setUsername("HashTester");
+        user.setEmail("hash@test.com");
+        user.setPassword("Abcde1!@");
+
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        UserEntity result = userService.save(user);
+
+        assertNotNull(result.getPassword());
+        assertNotEquals("Abcde1!@", result.getPassword());
+
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        assertTrue(encoder.matches("Abcde1!@", result.getPassword()));
+
         verify(userRepository).save(any(UserEntity.class));
     }
 
