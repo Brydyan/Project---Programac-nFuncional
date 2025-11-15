@@ -6,14 +6,24 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ec.edu.upse.backend.Domain.MessageValidator;
 import ec.edu.upse.backend.Entity.MessageEntity;
 import ec.edu.upse.backend.Repository.MessageRepository;
 @Service
 public class MessageService {
     @Autowired
     private MessageRepository messageRepository;
+
     // CREATE
     public MessageEntity save(MessageEntity message) {
+        // usamos la función pura antes de guardar
+        if (!MessageValidator.esContenidoValido(message.getContent())) {
+            throw new IllegalArgumentException("El contenido del mensaje no es válido");
+        }
+
+        // opcional: normalizar antes de guardar
+        message.setContent(MessageValidator.normalizarContenido(message.getContent()));
+
         return messageRepository.save(message);
     }
 
@@ -43,7 +53,12 @@ public class MessageService {
         Optional<MessageEntity> aux = messageRepository.findById(id);
         if (aux.isPresent()) {
             MessageEntity msg = aux.get();
-            msg.setContent(newData.getContent());
+
+            if (!MessageValidator.esContenidoValido(newData.getContent())) {
+                throw new IllegalArgumentException("El contenido del mensaje no es válido");
+            }
+
+            msg.setContent(MessageValidator.normalizarContenido(newData.getContent()));
             msg.setEdited(true);
             return messageRepository.save(msg);
         }
