@@ -57,9 +57,10 @@ export class LoginComponent implements OnInit {
   }
 
   // Este método emite el evento 'register'
-  onGoToRegister(): void {
+  onGoToRegister(): void {  
     this.changeMode.emit('register');
   }
+
 
   get email() { return this.loginForm.get('email'); }
   get password() { return this.loginForm.get('password'); }
