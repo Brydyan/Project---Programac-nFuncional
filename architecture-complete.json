@@ -1,0 +1,611 @@
+{
+  "project": "YARG Flow",
+  "version": "1.0.0",
+  "architecture": {
+    "type": "Microservices-ready Monolithic",
+    "pattern": "Layered Architecture with Clean Code principles",
+    "cqrs": "Not implemented (recommended for future)",
+    "eventSourcing": "Not implemented (recommended for future)"
+  },
+  "layers": {
+    "presentation": {
+      "name": "Client Layer",
+      "technology": "Angular 20 + TypeScript 5.9",
+      "components": [
+        {
+          "name": "LoginComponent",
+          "path": "src/app/Components/auth/login",
+          "responsibility": "User authentication UI",
+          "features": ["Form validation", "Password toggle", "Error handling"]
+        },
+        {
+          "name": "RegisterComponent",
+          "path": "src/app/Components/auth/register",
+          "responsibility": "User registration UI",
+          "features": ["Form validation", "Email verification"]
+        },
+        {
+          "name": "ForgotPasswordComponent",
+          "path": "src/app/Components/auth/forgotpassword",
+          "responsibility": "Password recovery",
+          "features": ["Email verification", "Token validation"]
+        },
+        {
+          "name": "AuthComponent (Orchestrator)",
+          "path": "src/app/pages/auth",
+          "responsibility": "Auth page orchestration",
+          "features": ["Mode switching", "Animation handling", "Component composition"]
+        }
+      ],
+      "communication": {
+        "protocol": "HTTPS/HTTP",
+        "method": "HttpClient + RxJS",
+        "baseUrl": "http://localhost:8080/app/v1"
+      }
+    },
+    "network": {
+      "name": "Network & Infrastructure",
+      "components": [
+        {
+          "name": "nginx Reverse Proxy",
+          "purpose": "Load balancing and static file serving",
+          "ports": {
+            "http": 80,
+            "https": 443
+          }
+        },
+        {
+          "name": "Docker Compose Orchestration",
+          "services": ["backend", "frontend", "mongodb", "redis"],
+          "volumes": ["mongo-data", "redis-data"]
+        }
+      ]
+    },
+    "api": {
+      "name": "API Layer - Spring Boot REST",
+      "framework": "Spring Boot 3.5.7",
+      "javaVersion": 21,
+      "controllers": [
+        {
+          "name": "UserController",
+          "baseUrl": "/app/v1/user",
+          "endpoints": [
+            { "method": "POST", "path": "/", "description": "Create user" },
+            { "method": "GET", "path": "/", "description": "Get all users" },
+            { "method": "GET", "path": "/{id}", "description": "Get user by ID" },
+            { "method": "GET", "path": "/username/{username}", "description": "Get user by username" },
+            { "method": "PUT", "path": "/{id}", "description": "Update user" },
+            { "method": "DELETE", "path": "/{id}", "description": "Delete user" }
+          ]
+        },
+        {
+          "name": "MessageController",
+          "baseUrl": "/app/v1/messages",
+          "endpoints": [
+            { "method": "POST", "path": "/", "description": "Create message" },
+            { "method": "GET", "path": "/", "description": "Get all messages" },
+            { "method": "GET", "path": "/channel/{id}", "description": "Get message by ID" },
+            { "method": "GET", "path": "/sender/{senderId}", "description": "Get messages by sender" },
+            { "method": "GET", "path": "/receiver/{receiverId}", "description": "Get messages by receiver" },
+            { "method": "GET", "path": "/channel/{channelId}", "description": "Get channel messages" },
+            { "method": "PUT", "path": "/{id}", "description": "Update message" },
+            { "method": "DELETE", "path": "/{id}", "description": "Delete message" }
+          ]
+        },
+        {
+          "name": "ChannelController",
+          "baseUrl": "/app/v1/channels",
+          "endpoints": [
+            { "method": "POST", "path": "/", "description": "Create channel" },
+            { "method": "GET", "path": "/", "description": "Get all channels" },
+            { "method": "GET", "path": "/{id}", "description": "Get channel by ID" },
+            { "method": "PUT", "path": "/{id}", "description": "Update channel" },
+            { "method": "DELETE", "path": "/{id}", "description": "Delete channel" }
+          ]
+        },
+        {
+          "name": "PresenceController",
+          "baseUrl": "/app/v1/presence",
+          "endpoints": [
+            { "method": "GET", "path": "/", "description": "Get all presences" },
+            { "method": "POST", "path": "/{userId}", "description": "Set user presence" }
+          ]
+        },
+        {
+          "name": "SessionController",
+          "baseUrl": "/app/v1/sessions",
+          "endpoints": [
+            { "method": "POST", "path": "/", "description": "Create session" },
+            { "method": "GET", "path": "/{userId}", "description": "Get user sessions" }
+          ]
+        },
+        {
+          "name": "NotificationController",
+          "baseUrl": "/app/v1/notifications",
+          "endpoints": [
+            { "method": "GET", "path": "/", "description": "Get all notifications" },
+            { "method": "POST", "path": "/{userId}", "description": "Send notification" }
+          ]
+        },
+        {
+          "name": "ContactController",
+          "baseUrl": "/app/v1/contacts",
+          "endpoints": [
+            { "method": "GET", "path": "/", "description": "Get all contacts" },
+            { "method": "POST", "path": "/", "description": "Add contact" }
+          ]
+        },
+        {
+          "name": "ChannelMsgController",
+          "baseUrl": "/app/v1/channel-messages",
+          "endpoints": [
+            { "method": "GET", "path": "/{channelId}", "description": "Get channel messages" }
+          ]
+        }
+      ],
+      "websocket": {
+        "endpoint": "/ws/messages",
+        "features": [
+          "Real-time messaging",
+          "Live presence updates",
+          "Channel notifications",
+          "Typing indicators"
+        ]
+      }
+    },
+    "businessLogic": {
+      "name": "Service Layer",
+      "services": [
+        {
+          "name": "UserService",
+          "methods": [
+            "save(UserEntity)",
+            "getAllUsers()",
+            "getUserById(String)",
+            "getUserByUsername(String)",
+            "updateUser(String, UserEntity)",
+            "deleteUser(String)"
+          ],
+          "validation": "UserValidator"
+        },
+        {
+          "name": "MessageService",
+          "methods": [
+            "save(MessageEntity)",
+            "getAllMessages()",
+            "getMessageById(String)",
+            "getMessagesBySender(String)",
+            "getMessagesByReceiver(String)",
+            "getMessagesByChannel(String)",
+            "updateMessage(String, MessageEntity)",
+            "deleteMessage(String)"
+          ],
+          "validation": "MessageValidator"
+        },
+        {
+          "name": "ChannelService",
+          "methods": [
+            "save(ChannelEntity)",
+            "getAllChannels()",
+            "getChannelById(String)",
+            "updateChannel(String, ChannelEntity)",
+            "deleteChannel(String)"
+          ],
+          "validation": "ChannelValidator"
+        },
+        {
+          "name": "PresenceService",
+          "methods": [
+            "setPresence(String, String)",
+            "getPresence(String)",
+            "updatePresence(String, String)"
+          ]
+        },
+        {
+          "name": "SessionService",
+          "methods": [
+            "createSession(String)",
+            "validateSession(String)",
+            "endSession(String)"
+          ]
+        },
+        {
+          "name": "NotificationService",
+          "methods": [
+            "sendNotification(String, String)",
+            "getNotifications(String)"
+          ]
+        },
+        {
+          "name": "ContactService",
+          "methods": [
+            "addContact(String, String)",
+            "removeContact(String, String)",
+            "getContacts(String)"
+          ]
+        },
+        {
+          "name": "ChannelMsgService",
+          "methods": [
+            "saveChannelMessage(ChannelMsgEntity)",
+            "getChannelMessages(String)"
+          ]
+        }
+      ],
+      "validators": [
+        {
+          "name": "UserValidator",
+          "methods": [
+            "normalizarUsername(String) -> String",
+            "normalizarEmail(String) -> String"
+          ],
+          "rules": [
+            "Username: 3-20 caracteres, alfanuméricos y guiones",
+            "Email: formato RFC válido"
+          ]
+        },
+        {
+          "name": "MessageValidator",
+          "methods": [
+            "validateContent(String) -> boolean",
+            "validateLength(String) -> boolean"
+          ]
+        },
+        {
+          "name": "ChannelValidator",
+          "methods": [
+            "validateChannelName(String) -> boolean",
+            "validateMembers(List) -> boolean"
+          ]
+        }
+      ]
+    },
+    "dataAccess": {
+      "name": "Repository Layer",
+      "orm": "Spring Data MongoDB",
+      "repositories": [
+        {
+          "name": "UserRepository",
+          "entity": "UserEntity",
+          "methods": ["findByUsername(String)", "findByEmail(String)", "findAll()", "findById(String)"]
+        },
+        {
+          "name": "MessageRepository",
+          "entity": "MessageEntity",
+          "methods": ["findBySenderId(String)", "findByReceiverId(String)", "findByChannelId(String)", "findAll()"]
+        },
+        {
+          "name": "ChannelRepository",
+          "entity": "ChannelEntity",
+          "methods": ["findAll()", "findById(String)", "findByName(String)"]
+        },
+        {
+          "name": "PresenceRepository",
+          "entity": "PresenceEntity",
+          "methods": ["findByUserId(String)", "findAll()"]
+        },
+        {
+          "name": "SessionRepository",
+          "entity": "SessionEntity",
+          "methods": ["findByUserId(String)", "findByToken(String)"]
+        },
+        {
+          "name": "NotificationRepository",
+          "entity": "NotificationEntity",
+          "methods": ["findByUserId(String)", "findByRead(boolean)"]
+        },
+        {
+          "name": "ContactRepository",
+          "entity": "ContactEntity",
+          "methods": ["findByUserId(String)", "findByContactId(String)"]
+        },
+        {
+          "name": "ChannelMsgRepository",
+          "entity": "ChannelMsgEntity",
+          "methods": ["findByChannelId(String)", "findBySenderId(String)"]
+        }
+      ]
+    },
+    "domain": {
+      "name": "Domain Model / Entities",
+      "entities": [
+        {
+          "name": "UserEntity",
+          "collection": "Users",
+          "fields": {
+            "id": { "type": "String", "annotation": "@Id", "description": "MongoDB ObjectId" },
+            "username": { "type": "String", "annotation": "@Field", "description": "Unique username" },
+            "email": { "type": "String", "description": "User email" },
+            "password": { "type": "String", "annotation": "@Field", "description": "Hashed password" },
+            "displayName": { "type": "String", "description": "Public display name" },
+            "status": { "type": "String", "description": "ONLINE, OFFLINE, AWAY" },
+            "createdAt": { "type": "Instant", "description": "Creation timestamp" },
+            "preferences": { "type": "Map<String, Object>", "description": "User preferences (embedded)" }
+          }
+        },
+        {
+          "name": "MessageEntity",
+          "collection": "Messages",
+          "fields": {
+            "id": { "type": "String", "annotation": "@Id" },
+            "senderId": { "type": "String", "description": "Reference to sender user" },
+            "receiverId": { "type": "String", "description": "null for channel messages" },
+            "channelId": { "type": "String", "description": "null for direct messages" },
+            "content": { "type": "String", "description": "Message body" },
+            "timestamp": { "type": "Instant", "description": "When message was sent" },
+            "edited": { "type": "boolean", "description": "If message was edited" },
+            "deleted": { "type": "boolean", "description": "Soft delete flag" }
+          }
+        },
+        {
+          "name": "ChannelEntity",
+          "collection": "Channels",
+          "fields": {
+            "id": { "type": "String", "annotation": "@Id" },
+            "name": { "type": "String", "description": "Channel name" },
+            "description": { "type": "String", "description": "Channel description" },
+            "createdBy": { "type": "String", "description": "Creator user ID" },
+            "members": { "type": "List<String>", "description": "Member user IDs" },
+            "createdAt": { "type": "Instant" }
+          }
+        },
+        {
+          "name": "PresenceEntity",
+          "collection": "Presences",
+          "fields": {
+            "id": { "type": "String", "annotation": "@Id" },
+            "userId": { "type": "String" },
+            "status": { "type": "String", "description": "ONLINE/OFFLINE/AWAY" },
+            "lastSeen": { "type": "Instant" }
+          }
+        },
+        {
+          "name": "SessionEntity",
+          "collection": "Sessions",
+          "fields": {
+            "id": { "type": "String", "annotation": "@Id" },
+            "userId": { "type": "String" },
+            "token": { "type": "String", "description": "JWT token" },
+            "createdAt": { "type": "Instant" },
+            "expiresAt": { "type": "Instant" }
+          }
+        },
+        {
+          "name": "NotificationEntity",
+          "collection": "Notifications",
+          "fields": {
+            "id": { "type": "String", "annotation": "@Id" },
+            "userId": { "type": "String" },
+            "message": { "type": "String" },
+            "type": { "type": "String", "description": "MESSAGE, CHANNEL, CONTACT" },
+            "read": { "type": "boolean" },
+            "createdAt": { "type": "Instant" }
+          }
+        },
+        {
+          "name": "ContactEntity",
+          "collection": "Contacts",
+          "fields": {
+            "id": { "type": "String", "annotation": "@Id" },
+            "userId": { "type": "String" },
+            "contactId": { "type": "String", "description": "Contact user ID" },
+            "addedAt": { "type": "Instant" }
+          }
+        },
+        {
+          "name": "ChannelMsgEntity",
+          "collection": "ChannelMessages",
+          "fields": {
+            "id": { "type": "String", "annotation": "@Id" },
+            "channelId": { "type": "String" },
+            "senderId": { "type": "String" },
+            "content": { "type": "String" },
+            "timestamp": { "type": "Instant" }
+          }
+        }
+      ]
+    },
+    "database": {
+      "primary": {
+        "type": "MongoDB Atlas (Cloud)",
+        "name": "YARGFlow",
+        "uri": "mongodb+srv://ali_user:AYRR3005abav@serveryargflow.hbcosog.mongodb.net/YARGFlow",
+        "collections": 8,
+        "features": [
+          "Horizontal scalability",
+          "Automatic replication",
+          "Daily backups",
+          "Global distribution"
+        ]
+      },
+      "cache": {
+        "type": "Redis",
+        "port": 6379,
+        "purpose": [
+          "Session token storage",
+          "User presence cache",
+          "Message cache",
+          "Rate limiting"
+        ],
+        "ttl": "Configurable per data type"
+      }
+    },
+    "infrastructure": {
+      "containerization": "Docker + Docker Compose",
+      "services": [
+        {
+          "name": "backend",
+          "image": "Custom Java 21 Spring Boot",
+          "port": 8080,
+          "dockerfile": "backend/Dockerfile",
+          "environment": {
+            "MONGO_URL": "mongodb://root:password@mongodb:27017/",
+            "REDIS_HOST": "redis",
+            "REDIS_PORT": 6379
+          },
+          "dependencies": ["mongodb", "redis"]
+        },
+        {
+          "name": "frontend",
+          "image": "Custom nginx + Angular 20",
+          "port": 80,
+          "dockerfile": "Frontend-PF/Dockerfile",
+          "dependencies": ["backend"]
+        },
+        {
+          "name": "mongodb",
+          "image": "mongo:latest",
+          "port": 27017,
+          "volume": "./backend/mongo-data:/data/db",
+          "environment": {
+            "MONGO_INITDB_ROOT_USERNAME": "root",
+            "MONGO_INITDB_ROOT_PASSWORD": "mi_clave_secreta"
+          }
+        },
+        {
+          "name": "redis",
+          "image": "redis:alpine",
+          "port": 6379,
+          "volume": "./backend/redis-data:/data"
+        }
+      ]
+    }
+  },
+  "operationalFlows": {
+    "userAuthentication": {
+      "flowName": "User Login Flow",
+      "steps": [
+        {
+          "step": 1,
+          "actor": "User/Frontend",
+          "action": "Enter email and password in LoginComponent"
+        },
+        {
+          "step": 2,
+          "actor": "FormBuilder",
+          "action": "Validate format (email, password required)"
+        },
+        {
+          "step": 3,
+          "actor": "HttpClient",
+          "action": "POST /app/v1/user with credentials"
+        },
+        {
+          "step": 4,
+          "actor": "UserController",
+          "action": "Receive createUser() request"
+        },
+        {
+          "step": 5,
+          "actor": "UserService",
+          "action": "Call save(user)"
+        },
+        {
+          "step": 6,
+          "actor": "UserValidator",
+          "action": "Normalize username and email"
+        },
+        {
+          "step": 7,
+          "actor": "UserRepository",
+          "action": "Persist to MongoDB"
+        },
+        {
+          "step": 8,
+          "actor": "UserController",
+          "action": "Return 200 OK with UserEntity"
+        },
+        {
+          "step": 9,
+          "actor": "Frontend",
+          "action": "Save token to localStorage"
+        },
+        {
+          "step": 10,
+          "actor": "Router",
+          "action": "Redirect to dashboard"
+        }
+      ],
+      "errorScenarios": [
+        { "status": 404, "message": "User not found" },
+        { "status": 400, "message": "Invalid input format" },
+        { "status": 401, "message": "Incorrect credentials" }
+      ]
+    },
+    "messageFlow": {
+      "directMessage": {
+        "flowName": "Send Direct Message",
+        "steps": [
+          "1. User A opens chat with User B",
+          "2. Types message and clicks send",
+          "3. POST /app/v1/messages {senderId, receiverId, content}",
+          "4. MessageController.create() receives request",
+          "5. MessageService.save() validates content",
+          "6. MessageRepository.save() persists in MongoDB",
+          "7. WebSocket notifies User B in real-time",
+          "8. Both users see message instantly"
+        ]
+      },
+      "channelMessage": {
+        "flowName": "Publish to Channel",
+        "steps": [
+          "1. User publishes in channel",
+          "2. POST /app/v1/channel-messages",
+          "3. ChannelMsgService.save()",
+          "4. Persist in MongoDB (ChannelMessages collection)",
+          "5. WebSocket broadcasts to all channel members",
+          "6. All users see message in real-time"
+        ]
+      }
+    },
+    "presenceTracking": {
+      "flowName": "User Presence Update",
+      "steps": [
+        "1. User connects/disconnects",
+        "2. WebSocket CONNECT/DISCONNECT event",
+        "3. PresenceService.setPresence(userId, status)",
+        "4. Store in Redis with TTL",
+        "5. Broadcast to user contacts",
+        "6. Frontend updates status (online/offline/away)"
+      ]
+    }
+  },
+  "metrics": {
+    "completion": {
+      "backendAPI": "100%",
+      "frontendAuth": "80%",
+      "databaseDesign": "100%",
+      "testing": "50%",
+      "websocket": "0%",
+      "security": "40%",
+      "docker": "90%",
+      "cicd": "0%"
+    },
+    "codeStatistics": {
+      "javaSources": {
+        "controllers": 8,
+        "services": 8,
+        "entities": 8,
+        "repositories": 8,
+        "validators": 3,
+        "totalFiles": 35
+      },
+      "typescriptSources": {
+        "components": 7,
+        "pages": 2,
+        "services": 4,
+        "totalFiles": 13
+      }
+    }
+  },
+  "roadmap": {
+    "phase1": { "status": "COMPLETE", "name": "REST API Foundation" },
+    "phase2": { "status": "PENDING", "name": "JWT Authentication" },
+    "phase3": { "status": "PENDING", "name": "WebSocket Real-time" },
+    "phase4": { "status": "PENDING", "name": "Frontend Dashboard" },
+    "phase5": { "status": "PENDING", "name": "Comprehensive Testing (80%+)" },
+    "phase6": { "status": "PENDING", "name": "OAuth2 Integration" },
+    "phase7": { "status": "PENDING", "name": "CI/CD Pipeline" },
+    "phase8": { "status": "PENDING", "name": "OpenAPI/Swagger Documentation" }
+  }
+}
