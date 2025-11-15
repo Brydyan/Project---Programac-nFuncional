@@ -5,9 +5,10 @@ services:
     build: ./backend
     container_name: mi_backend
     ports:
-      - "3000:3000" # O el puerto de tu backend (ej. 8080 para Java)
+      - "8081:8080"
     environment:
       - MONGO_URL=mongodb://root:mi_clave_secreta@mongodb:27017/
+      - SPRING_DATA_MONGODB_URI=mongodb://root:mi_clave_secreta@mongodb:27017/YARGFlow?authSource=admin
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:

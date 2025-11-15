@@ -1,7 +1,8 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common'; // <-- Importar
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms'; // <-- Importar
-import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../../../Service/AuthService';
+import { ToastService } from '../../../Shared/toast.service';
 @Component({
   selector: 'app-login',
   standalone: true, 
@@ -16,8 +17,10 @@ export class LoginComponent implements OnInit {
   @Output() changeMode = new EventEmitter<'register' | 'forgot'>();
   loginForm!: FormGroup;
   showPassword = false;
+  isLoading = false;
+  message: string | null = null;
 
-  constructor(private fb: FormBuilder, private http: HttpClient) { }
+  constructor(private fb: FormBuilder, private auth: AuthService, private toast: ToastService) { }
 
   ngOnInit(): void {
     this.loginForm = this.fb.group({
@@ -33,17 +36,27 @@ export class LoginComponent implements OnInit {
   onLoginSubmit(): void {
   if (this.loginForm.valid) {
     
-    // 🎯 URL FINAL CORREGIDA
-    const loginUrl = '/api/auth/login'; 
-    
-    this.http.post(loginUrl, this.loginForm.value).subscribe({
-      next: (response) => {
-        console.log('Login exitoso:', response);
-        // Aquí debes guardar el token (si existe) y redirigir al usuario
+    // Llamar al servicio de autenticación que crea una sesión en el backend
+    const identifier = this.loginForm.value.email || this.loginForm.value.alias;
+    this.isLoading = true;
+    this.message = null;
+    this.auth.login(identifier, this.loginForm.value.password).subscribe({
+      next: (response: any) => {
+        this.isLoading = false;
+        console.log('Login (sesión) exitoso:', response);
+        const token = response?.token;
+        if (token) {
+          this.auth.saveToken(token);
+        }
+        this.message = 'Inicio de sesión correcto.';
+        this.toast.show('Inicio de sesión correcto', 'success');
+        // TODO: redirigir al usuario a la app
       },
-      error: (err) => {
-        console.error('Error de login:', err);
-        // Muestra un mensaje de error en la UI (e.g., credenciales incorrectas)
+        error: (err: any) => {
+        this.isLoading = false;
+        console.error('Error al crear sesión:', err);
+        this.message = err?.message || 'Error al iniciar sesión.';
+        this.toast.show(this.message ?? 'Error al iniciar sesión.', 'error');
       }
     });
     
