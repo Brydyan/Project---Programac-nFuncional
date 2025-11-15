@@ -19,22 +19,29 @@ import ec.edu.upse.backend.Service.MessageService;
 @RestController
 @RequestMapping("/app/v1/messages")
 public class MessageController {
+
     @Autowired
     private MessageService messageService;
+
+    // CREATE
     @PostMapping
     public ResponseEntity<MessageEntity> create(@RequestBody MessageEntity message) {
         return ResponseEntity.ok(messageService.save(message));
     }
+
+    // READ
     @GetMapping
     public ResponseEntity<List<MessageEntity>> getAll() {
         return ResponseEntity.ok(messageService.getAllMessages());
     }
-    @GetMapping("/channel/{id}")
+
+    @GetMapping("/{id}")
     public ResponseEntity<MessageEntity> getById(@PathVariable String id) {
         return messageService.getMessageById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
     @GetMapping("/sender/{senderId}")
     public ResponseEntity<List<MessageEntity>> getBySender(@PathVariable String senderId) {
         return ResponseEntity.ok(messageService.getMessagesBySender(senderId));
