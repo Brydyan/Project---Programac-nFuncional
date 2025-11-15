@@ -19,6 +19,13 @@ import ec.edu.upse.backend.Service.ChannelService;
 @RestController
 @RequestMapping("/app/v1/channels")
 public class ChannelController {
+    /**
+     * sevicio para manejar las operaciones de canales
+     * tales como crear, obtener, actualizar y eliminar canales
+     * está inyectado automáticamente por Spring
+     * esta clase utiliza ChannelService para realizar operaciones relacionadas con canales
+     * ademas se usa en los endpoints definidos en este controlador
+     */
     @Autowired
     private ChannelService channelService;
     @PostMapping
@@ -29,7 +36,7 @@ public class ChannelController {
     public ResponseEntity<List<ChannelEntity>> getAllChannels() {
         return ResponseEntity.ok(channelService.getAllChannels());
     }
-    @GetMapping("{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<ChannelEntity> getChannelById(@PathVariable String id) {
         return channelService.getChannelById(id)
                 .map(ResponseEntity::ok)

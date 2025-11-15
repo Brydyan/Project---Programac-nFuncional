@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ec.edu.upse.backend.Domain.ChannelValidator;
 import ec.edu.upse.backend.Entity.ChannelEntity;
 import ec.edu.upse.backend.Repository.ChannelRepository;
 
@@ -16,6 +17,13 @@ public class ChannelService {
 
     // CREATE
     public ChannelEntity save(ChannelEntity channel) {
+        String normalizedName = ChannelValidator.normalizarNombre(channel.getName());
+        if (normalizedName == null) {
+            throw new IllegalArgumentException("Nombre de canal inválido");
+        }
+
+        channel.setName(normalizedName);
+
         return channelRepository.save(channel);
     }
 
@@ -33,7 +41,13 @@ public class ChannelService {
         Optional<ChannelEntity> aux = channelRepository.findById(id);
         if (aux.isPresent()) {
             ChannelEntity channel = aux.get();
-            channel.setName(newData.getName());
+
+            String normalizedName = ChannelValidator.normalizarNombre(newData.getName());
+            if (normalizedName == null) {
+                throw new IllegalArgumentException("Nombre de canal inválido");
+            }
+
+            channel.setName(normalizedName);
             channel.setType(newData.getType());
             channel.setMembers(newData.getMembers());
             return channelRepository.save(channel);

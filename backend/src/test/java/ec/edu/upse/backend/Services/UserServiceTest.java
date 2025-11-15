@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -39,18 +40,49 @@ class UserServiceTest {
 
     // CREATE
     @Test
-    void save_debeGuardarYRetornarUsuario() {
+    void save_conDatosValidos_debeGuardarYRetornarUsuario() {
         UserEntity user = new UserEntity();
         user.setId("1");
-        user.setUsername("juan");
+        user.setUsername("Juan_123"); // username válido
+        user.setEmail("juan@example.com"); // email válido
 
-        when(userRepository.save(user)).thenReturn(user);
+        // después de normalizar debería quedar en minúsculas
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         UserEntity result = userService.save(user);
 
         assertNotNull(result);
-        assertEquals("juan", result.getUsername());
-        verify(userRepository).save(user);
+        assertEquals("juan_123", result.getUsername()); // normalizado a minúsculas
+        assertEquals("juan@example.com", result.getEmail()); // normalizado
+        verify(userRepository).save(any(UserEntity.class));
+    }
+
+    @Test
+    void save_conUsernameInvalido_debeLanzarExcepcion() {
+        UserEntity user = new UserEntity();
+        user.setId("1");
+        user.setUsername("   "); // inválido
+        user.setEmail("juan@example.com"); // válido
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.save(user);
+        });
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void save_conEmailInvalido_debeLanzarExcepcion() {
+        UserEntity user = new UserEntity();
+        user.setId("1");
+        user.setUsername("Juan_123"); // válido
+        user.setEmail("correo-sin-arroba"); // inválido
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.save(user);
+        });
+
+        verify(userRepository, never()).save(any());
     }
 
     // READ - getAllUsers
@@ -149,9 +181,9 @@ class UserServiceTest {
         existing.setPreferences(oldPref);
 
         UserEntity newData = new UserEntity();
-        newData.setUsername("nuevo");
+        newData.setUsername("Nuevo_Usuario"); // válido
         newData.setDisplayName("Nuevo Nombre");
-        newData.setEmail("nuevo@example.com");
+        newData.setEmail("nuevo@example.com"); // válido
         newData.setStatus("online");
 
         Map<String, Object> newPref = new HashMap<>();
@@ -159,12 +191,14 @@ class UserServiceTest {
         newData.setPreferences(newPref);
 
         when(userRepository.findById(id)).thenReturn(Optional.of(existing));
-        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.save(any(UserEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         UserEntity result = userService.updateUser(id, newData);
 
         assertNotNull(result);
-        assertEquals("nuevo", result.getUsername());
+        // username / email deben salir normalizados (minúsculas, trim, etc.)
+        assertEquals("nuevo_usuario", result.getUsername());
         assertEquals("Nuevo Nombre", result.getDisplayName());
         assertEquals("nuevo@example.com", result.getEmail());
         assertEquals("online", result.getStatus());
@@ -172,6 +206,52 @@ class UserServiceTest {
 
         verify(userRepository).findById(id);
         verify(userRepository).save(existing);
+    }
+
+    @Test
+    void updateUser_cuandoExisteYUsernameInvalido_debeLanzarExcepcion() {
+        String id = "1";
+
+        UserEntity existing = new UserEntity();
+        existing.setId(id);
+        existing.setUsername("viejo");
+        existing.setEmail("viejo@example.com");
+
+        UserEntity newData = new UserEntity();
+        newData.setUsername("  "); // inválido
+        newData.setEmail("nuevo@example.com"); // válido
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(existing));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.updateUser(id, newData);
+        });
+
+        verify(userRepository).findById(id);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void updateUser_cuandoExisteYEmailInvalido_debeLanzarExcepcion() {
+        String id = "1";
+
+        UserEntity existing = new UserEntity();
+        existing.setId(id);
+        existing.setUsername("viejo");
+        existing.setEmail("viejo@example.com");
+
+        UserEntity newData = new UserEntity();
+        newData.setUsername("Nuevo_Usuario"); // válido
+        newData.setEmail("correo-invalido"); // inválido
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(existing));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            userService.updateUser(id, newData);
+        });
+
+        verify(userRepository).findById(id);
+        verify(userRepository, never()).save(any());
     }
 
     @Test

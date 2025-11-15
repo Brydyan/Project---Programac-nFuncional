@@ -14,10 +14,15 @@ import lombok.Setter;
 
 public class ChannelMsgEntity {
     @Id
+    private String id;
     private String messageId; // ID del mensaje
     private String channel; // ID del canal
     private String senderId; // ID del usuario que envía el mensaje
     private String messageContent; // Contenido del mensaje
     private Instant timestamp = Instant.now(); // Marca de tiempo del mensaje
     private String status; // Estado del mensaje (pendiente,enviado, entregado, leído)
+
+    public void setId(String id){
+        this.id = id;
+    }
 }

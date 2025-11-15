@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ec.edu.upse.backend.Domain.UserValidator;
 import ec.edu.upse.backend.Entity.UserEntity;
 import ec.edu.upse.backend.Repository.UserRepository;
 
@@ -16,6 +17,19 @@ public class UserService {
 
     // CREATE
     public UserEntity save(UserEntity user) {
+        String normalizedUsername = UserValidator.normalizarUsername(user.getUsername());
+        String normalizedEmail = UserValidator.normalizarEmail(user.getEmail());
+
+        if (normalizedUsername == null) {
+            throw new IllegalArgumentException("Username inválido");
+        }
+        if (normalizedEmail == null) {
+            throw new IllegalArgumentException("Email inválido");
+        }
+
+        user.setUsername(normalizedUsername);
+        user.setEmail(normalizedEmail);
+
         return userRepository.save(user);
     }
 
@@ -37,11 +51,25 @@ public class UserService {
         Optional<UserEntity> aux = userRepository.findById(id);
         if (aux.isPresent()) {
             UserEntity existing = aux.get();
-            existing.setUsername(newUser.getUsername());
+
+            // ✅ validamos y normalizamos username
+            String normalizedUsername = UserValidator.normalizarUsername(newUser.getUsername());
+            if (normalizedUsername == null) {
+                throw new IllegalArgumentException("Username inválido");
+            }
+
+            // ✅ validamos y normalizamos email
+            String normalizedEmail = UserValidator.normalizarEmail(newUser.getEmail());
+            if (normalizedEmail == null) {
+                throw new IllegalArgumentException("Email inválido");
+            }
+
+            existing.setUsername(normalizedUsername);
             existing.setDisplayName(newUser.getDisplayName());
-            existing.setEmail(newUser.getEmail());
+            existing.setEmail(normalizedEmail);
             existing.setStatus(newUser.getStatus());
             existing.setPreferences(newUser.getPreferences());
+
             return userRepository.save(existing);
         }
         return null;
@@ -55,4 +83,5 @@ public class UserService {
         }
         return false;
     }
+
 }

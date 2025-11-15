@@ -11,6 +11,10 @@ import ec.edu.upse.backend.Repository.ChannelMsgRepository;
 
 @Service
 public class ChannelMsgService {
+    /**
+     * Repositorio de mensajes de canal
+     * 
+     */
     @Autowired
     private ChannelMsgRepository channelMsgRepository;
 

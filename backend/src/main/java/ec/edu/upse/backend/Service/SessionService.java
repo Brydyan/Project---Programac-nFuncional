@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import ec.edu.upse.backend.Domain.SessionValidator;
 import ec.edu.upse.backend.Entity.SessionEntity;
 import ec.edu.upse.backend.Repository.SessionRepository;
 
@@ -16,6 +17,21 @@ public class SessionService {
 
     // CREATE
     public SessionEntity save(SessionEntity session) {
+        if (!SessionValidator.esUserIdValido(session.getUserId())) {
+            throw new IllegalArgumentException("UserId inválido para sesión");
+        }
+        if (!SessionValidator.esTokenValido(session.getToken())) {
+            throw new IllegalArgumentException("Token inválido para sesión");
+        }
+
+        String normalizedStatus = SessionValidator.normalizarStatus(session.getStatus());
+        if (normalizedStatus == null) {
+            throw new IllegalArgumentException("Status de sesión inválido");
+        }
+
+        session.setStatus(normalizedStatus);
+        // horaFecha ya se setea por defecto en la entidad
+
         return sessionRepository.save(session);
     }
 
@@ -49,11 +65,18 @@ public class SessionService {
         Optional<SessionEntity> aux = sessionRepository.findById(id);
         if (aux.isPresent()) {
             SessionEntity session = aux.get();
-            session.setStatus(newData.getStatus());
+
+            String normalizedStatus = SessionValidator.normalizarStatus(newData.getStatus());
+            if (normalizedStatus == null) {
+                throw new IllegalArgumentException("Status de sesión inválido");
+            }
+
+            session.setStatus(normalizedStatus);
             session.setDevice(newData.getDevice());
             session.setIpAddress(newData.getIpAddress());
             session.setLocation(newData.getLocation());
             session.setBrowser(newData.getBrowser());
+            // horaFecha podrías actualizarla si consideras que cambia al modificar
             return sessionRepository.save(session);
         }
         return null;
