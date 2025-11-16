@@ -10,16 +10,23 @@ import lombok.Setter;
 @Document(collection = "Sessions")
 @Getter
 @Setter
-
 public class SessionEntity {
+
     @Id
     private String id;
-    private String userId; // Referencia al usuario
-    private String token; // JWT or session token
-    private String status; // active, inactive
-    private String device; // dispositivo usado
-    private String ipAddress;  // dirección IP
-    private String location; // ubicación
-    private String browser; // navegador
-    private Instant horaFecha = Instant.now(); // marca de tiempo de la sesión
+
+    private String sessionId;       // Identificador de sesión único
+    private String userId;
+    private String token;           // JWT único por dispositivo
+    private String status;          // active | inactive
+    private String device;
+    private String ipAddress;
+    private String location;
+    private String browser;
+
+    private Instant loginAt = Instant.now();
+    private Instant lastActivity = Instant.now();
+    private Instant expiresAt;      // Expiración del JWT
+
+    private boolean valid = true;   //Para invalidar sesiones
 }

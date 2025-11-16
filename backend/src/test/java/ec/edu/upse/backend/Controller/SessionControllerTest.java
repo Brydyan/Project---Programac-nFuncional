@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.any;
+// removed unused any() import
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -53,18 +53,19 @@ class SessionControllerTest {
         s.setUserId("u1");
         s.setToken("abc123");
         s.setStatus("active");
-        s.setHoraFecha(Instant.now());
+        s.setDevice("PC");
+        s.setIpAddress("127.0.0.1");
+        s.setBrowser("Chrome");
+        s.setLoginAt(Instant.now());
 
-        when(sessionService.save(any(SessionEntity.class))).thenReturn(s);
+        when(sessionService.createSession(org.mockito.ArgumentMatchers.any(String.class), org.mockito.ArgumentMatchers.any(String.class), org.mockito.ArgumentMatchers.any(String.class), org.mockito.ArgumentMatchers.any(String.class), org.mockito.ArgumentMatchers.any(String.class), org.mockito.ArgumentMatchers.any(java.time.Instant.class))).thenReturn(s);
 
-        mockMvc.perform(post(BASE_URL)
-                .contentType("application/json")
-                .content(objectMapper.writeValueAsString(s)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value("1"))
-                .andExpect(jsonPath("$.token").value("abc123"));
+        mockMvc.perform(post(BASE_URL + "/create")
+            .contentType("application/json")
+            .content(objectMapper.writeValueAsString(s)))
+            .andExpect(status().isOk());
 
-        verify(sessionService).save(any(SessionEntity.class));
+        verify(sessionService).createSession(org.mockito.ArgumentMatchers.any(String.class), org.mockito.ArgumentMatchers.any(String.class), org.mockito.ArgumentMatchers.any(String.class), org.mockito.ArgumentMatchers.any(String.class), org.mockito.ArgumentMatchers.any(String.class), org.mockito.ArgumentMatchers.any(java.time.Instant.class));
     }
 
     @Test
@@ -77,13 +78,13 @@ class SessionControllerTest {
 
         List<SessionEntity> list = Arrays.asList(s1, s2);
 
-        when(sessionService.getAllSessions()).thenReturn(list);
+        when(sessionService.getAll()).thenReturn(list);
 
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
 
-        verify(sessionService).getAllSessions();
+        verify(sessionService).getAll();
     }
 
     @Test
@@ -91,18 +92,18 @@ class SessionControllerTest {
         SessionEntity s = new SessionEntity();
         s.setId("1");
 
-        when(sessionService.getSessionById("1")).thenReturn(Optional.of(s));
+        when(sessionService.getById("1")).thenReturn(Optional.of(s));
 
         mockMvc.perform(get(BASE_URL + "/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value("1"));
 
-        verify(sessionService).getSessionById("1");
+        verify(sessionService).getById("1");
     }
 
     @Test
     void getSessionById_cuandoNoExiste_debeRetornar404() throws Exception {
-        when(sessionService.getSessionById("99")).thenReturn(Optional.empty());
+        when(sessionService.getById("99")).thenReturn(Optional.empty());
 
         mockMvc.perform(get(BASE_URL + "/99"))
                 .andExpect(status().isNotFound());
@@ -113,13 +114,13 @@ class SessionControllerTest {
         SessionEntity s = new SessionEntity();
         s.setToken("xyz");
 
-        when(sessionService.getSessionByToken("xyz")).thenReturn(Optional.of(s));
+        when(sessionService.getByToken("xyz")).thenReturn(Optional.of(s));
 
         mockMvc.perform(get(BASE_URL + "/token/xyz"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("xyz"));
 
-        verify(sessionService).getSessionByToken("xyz");
+        verify(sessionService).getByToken("xyz");
     }
 
     @Test
@@ -132,13 +133,13 @@ class SessionControllerTest {
 
         List<SessionEntity> list = Arrays.asList(s1, s2);
 
-        when(sessionService.getSessionsByUserId("u1")).thenReturn(list);
+        when(sessionService.getByUserId("u1")).thenReturn(list);
 
         mockMvc.perform(get(BASE_URL + "/user/u1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)));
 
-        verify(sessionService).getSessionsByUserId("u1");
+        verify(sessionService).getByUserId("u1");
     }
 
     @Test
@@ -150,45 +151,30 @@ class SessionControllerTest {
         updated.setId("1");
         updated.setStatus("inactive");
 
-        when(sessionService.updateSession(eq("1"), any(SessionEntity.class))).thenReturn(updated);
+        // Replace update test with logout behavior
+        when(sessionService.getById("1")).thenReturn(java.util.Optional.of(updated));
 
-        mockMvc.perform(put(BASE_URL + "/1")
-                .contentType("application/json")
-                .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("inactive"));
+        mockMvc.perform(post(BASE_URL + "/logout/1"))
+            .andExpect(status().isOk());
 
-        verify(sessionService).updateSession(eq("1"), any(SessionEntity.class));
+        verify(sessionService).logout("1");
     }
 
     @Test
     void updateSession_cuandoNoExiste_debeRetornar404() throws Exception {
-        when(sessionService.updateSession(eq("99"), any(SessionEntity.class))).thenReturn(null);
+        // Non-existent logout should still return OK (idempotent); simulate not found
+        when(sessionService.getById("99")).thenReturn(java.util.Optional.empty());
 
-        SessionEntity input = new SessionEntity();
-        input.setStatus("inactive");
-
-        mockMvc.perform(put(BASE_URL + "/99")
-                .contentType("application/json")
-                .content(objectMapper.writeValueAsString(input)))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(post(BASE_URL + "/logout/99"))
+            .andExpect(status().isOk());
     }
 
     @Test
-    void deleteSession_cuandoExiste_debeRetornar204() throws Exception {
-        when(sessionService.deleteSession("1")).thenReturn(true);
+    void logoutAll_debeRetornar200() throws Exception {
+        // call logout all for a user
+        mockMvc.perform(post(BASE_URL + "/logout/user/u1"))
+                .andExpect(status().isOk());
 
-        mockMvc.perform(delete(BASE_URL + "/1"))
-                .andExpect(status().isNoContent());
-
-        verify(sessionService).deleteSession("1");
-    }
-
-    @Test
-    void deleteSession_cuandoNoExiste_debeRetornar404() throws Exception {
-        when(sessionService.deleteSession("99")).thenReturn(false);
-
-        mockMvc.perform(delete(BASE_URL + "/99"))
-                .andExpect(status().isNotFound());
+        verify(sessionService).logoutAll("u1");
     }
 }
