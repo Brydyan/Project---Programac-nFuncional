@@ -152,6 +152,22 @@ button[type="submit"]:disabled {
   margin-left: 0.2rem;
 }
 
+.success-message {
+  color: #51cf66;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  margin-left: 0.2rem;
+  font-weight: 600;
+}
+
+.info-message {
+  color: #74c0fc;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  margin-left: 0.2rem;
+  font-style: italic;
+}
+
 .footer-link {
   text-align: center;
   margin-top: 0.5rem; 
@@ -168,4 +184,10 @@ button[type="submit"]:disabled {
 
 .footer-link a:hover {
   text-decoration: underline;
+}
+
+input:focus {
+  outline: none;
+  border: 2px solid #a9a4ff;
+  box-shadow: 0 0 6px #a9a4ff88;
 }

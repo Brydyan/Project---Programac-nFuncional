@@ -31,6 +31,16 @@ public class UserService {
             throw new IllegalArgumentException("Email inválido");
         }
 
+        // Validar que username no esté duplicado
+        if (userRepository.findByUsername(normalizedUsername).isPresent()) {
+            throw new IllegalArgumentException("El nombre de usuario ya está registrado");
+        }
+        
+        // Validar que email no esté duplicado
+        if (userRepository.findByEmail(normalizedEmail).isPresent()) {
+            throw new IllegalArgumentException("El correo electrónico ya está registrado");
+        }
+
         user.setUsername(normalizedUsername);
         user.setEmail(normalizedEmail);
 
@@ -129,10 +139,23 @@ public class UserService {
     }
 
     public Optional<UserEntity> findByIdentifier(String idOrEmail) {
-    Optional<UserEntity> u = userRepository.findByUsername(idOrEmail);
-    if (u.isEmpty())
-        u = userRepository.findByEmail(idOrEmail);
-    return u;
-}
+        Optional<UserEntity> u = userRepository.findByUsername(idOrEmail);
+        if (u.isEmpty())
+            u = userRepository.findByEmail(idOrEmail);
+        return u;
+    }
+
+    // AVAILABILITY CHECK
+    public boolean isUsernameAvailable(String username) {
+        String normalized = UserValidator.normalizarUsername(username);
+        if (normalized == null) return false;
+        return userRepository.findByUsername(normalized).isEmpty();
+    }
+
+    public boolean isEmailAvailable(String email) {
+        String normalized = UserValidator.normalizarEmail(email);
+        if (normalized == null) return false;
+        return userRepository.findByEmail(normalized).isEmpty();
+    }
 
 }
