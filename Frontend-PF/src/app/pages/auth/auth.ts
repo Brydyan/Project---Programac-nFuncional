@@ -12,19 +12,10 @@ import { ForgotPasswordComponent } from '../../Components/auth/forgotpassword/fo
   styleUrls: ['./auth.css']
 })
 export class AuthComponent {
-  
-  
-  mode: 'login' | 'register' | 'forgot' = 'login'; 
-  isAnimating = false;
 
-  setMode(newMode: 'login' | 'register' | 'forgot'): void {
-    if (this.isAnimating || this.mode === newMode) return;
+  mode: 'login' | 'register' | 'forgot' = 'login';
 
-    this.isAnimating = true;
-    this.mode = newMode; 
-
-    // Sincronizado con la animación CSS
-    setTimeout(() => (this.isAnimating = false), 700);
+  setMode(m: 'login' | 'register' | 'forgot') {
+    this.mode = m;
   }
- 
 }

@@ -1,31 +1,37 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { CommonModule } from '@angular/common'; // <-- Importar
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms'; // <-- Importar
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../../Service/AuthService';
+import { Router } from '@angular/router';
 import { ToastService } from '../../../Shared/toast.service';
+
 @Component({
   selector: 'app-login',
-  standalone: true, 
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-  ], 
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './login.html',
-  styleUrls: ['./login.scss'] 
+  styleUrls: ['./login.scss']
 })
 export class LoginComponent implements OnInit {
+
   @Output() changeMode = new EventEmitter<'register' | 'forgot'>();
+
   loginForm!: FormGroup;
   showPassword = false;
   isLoading = false;
   message: string | null = null;
 
-  constructor(private fb: FormBuilder, private auth: AuthService, private toast: ToastService) { }
+  constructor(
+    private fb: FormBuilder,
+    private auth: AuthService,
+    private router: Router,
+    private toast: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required]
+      password: ['', Validators.required],
     });
   }
 
@@ -34,46 +40,54 @@ export class LoginComponent implements OnInit {
   }
 
   onLoginSubmit(): void {
-  if (this.loginForm.valid) {
-    
-    // Llamar al servicio de autenticación que crea una sesión en el backend
-    const identifier = this.loginForm.value.email || this.loginForm.value.alias;
+    if (!this.loginForm.valid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
+
+    const payload = {
+      identifier: this.loginForm.value.email,
+      password: this.loginForm.value.password,
+    };
+
     this.isLoading = true;
     this.message = null;
-    this.auth.login(identifier, this.loginForm.value.password).subscribe({
-      next: (response: any) => {
+
+    this.auth.login(payload).subscribe({
+      next: (res: any) => {
         this.isLoading = false;
-        console.log('Login (sesión) exitoso:', response);
-        const token = response?.token;
-        if (token) {
-          this.auth.saveToken(token);
+
+        // Guardar token si existe
+        if (res?.token) {
+          localStorage.setItem('token', res.token);
         }
-        this.message = 'Inicio de sesión correcto.';
+
         this.toast.show('Inicio de sesión correcto', 'success');
-        // TODO: redirigir al usuario a la app
+        this.router.navigate(['/dashboard']);
       },
-        error: (err: any) => {
+
+      error: (err) => {
         this.isLoading = false;
-        console.error('Error al crear sesión:', err);
-        this.message = err?.message || 'Error al iniciar sesión.';
-        this.toast.show(this.message ?? 'Error al iniciar sesión.', 'error');
+
+        // Mensaje enviado por backend
+        if (err?.error?.message) {
+          this.message = err.error.message;
+        } else {
+          this.message = 'Usuario o contraseña incorrectos';
+        }
+
+        this.toast.show(this.message ?? '', 'error');
       }
     });
-    
-  } else {
-    this.loginForm.markAllAsTouched();
   }
-}
+
   onForgotPassword(): void {
-    console.log('Emitiendo evento forgot'); //para depurar
     this.changeMode.emit('forgot');
   }
 
-  // Este método emite el evento 'register'
-  onGoToRegister(): void {  
+  onGoToRegister(): void {
     this.changeMode.emit('register');
   }
-
 
   get email() { return this.loginForm.get('email'); }
   get password() { return this.loginForm.get('password'); }
