@@ -2,7 +2,10 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common'; // <-- Importar
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms'; // <-- Importar
 import { AuthService } from '../../../Service/AuthService';
+import { UserAvailabilityService } from '../../../Service/UserAvailabilityService';
 import { ToastService } from '../../../Shared/toast.service';
+import { ChangeDetectorRef } from '@angular/core';
+
 
 @Component({
   selector: 'app-register',
@@ -22,7 +25,31 @@ export class RegisterComponent implements OnInit {
   isLoading = false;
   message: string | null = null;
 
-  constructor(private fb: FormBuilder, private auth: AuthService, private toast: ToastService) { }
+  // Availability check states
+  usernameAvailability: { available?: boolean; checking: boolean } = { checking: false };
+  emailAvailability: { available?: boolean; checking: boolean } = { checking: false };
+
+    /** Orden vertical */
+  fieldOrder = [
+    "email",
+    "nombre",
+    "alias",
+    "password",
+    "confirmPassword",
+    "day",
+    "month",
+    "year",
+    "submitBtn"
+  ];
+
+  /** Grupos horizontales */
+  horizontalGroups: Record<string, string[]> = {
+    day: ["day", "month", "year"],
+    month: ["day", "month", "year"],
+    year: ["day", "month", "year"]
+  };
+
+  constructor(private fb: FormBuilder, private auth: AuthService, private toast: ToastService, private availabilityService: UserAvailabilityService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
     this.registerForm = this.fb.group({
@@ -54,7 +81,67 @@ export class RegisterComponent implements OnInit {
         ]
       });
   }
+/** Navegación mejorada */
+  onKeyNavigate(event: KeyboardEvent, currentId: string) {
+    const key = event.key;
+    const vertical = this.fieldOrder;
+    const hGroup = this.horizontalGroups[currentId];
+    const index = vertical.indexOf(currentId);
 
+    // Backspace retrocede si está vacío
+    if (key === "Backspace") {
+      const el = document.getElementById(currentId) as HTMLInputElement;
+      if (el?.value.length === 0 && index > 0) {
+        event.preventDefault();
+        this.focus(vertical[index - 1]);
+      }
+      return;
+    }
+
+    // Flecha arriba (vertical)
+    if (key === "ArrowUp" && index > 0) {
+      event.preventDefault();
+      this.focus(vertical[index - 1]);
+      return;
+    }
+
+    // Flecha abajo (vertical)
+    if (key === "ArrowDown" && index < vertical.length - 1) {
+      event.preventDefault();
+      this.focus(vertical[index + 1]);
+      return;
+    }
+
+    // Flechas horizontales (solo en day/month/year)
+    if (hGroup) {
+      const hIndex = hGroup.indexOf(currentId);
+
+      if (key === "ArrowLeft" && hIndex > 0) {
+        event.preventDefault();
+        this.focus(hGroup[hIndex - 1]);
+        return;
+      }
+
+      if (key === "ArrowRight" && hIndex < hGroup.length - 1) {
+        event.preventDefault();
+        this.focus(hGroup[hIndex + 1]);
+        return;
+      }
+    }
+
+    // Enter → avanzar al siguiente campo
+    if (key === "Enter" && index < vertical.length - 1) {
+      event.preventDefault();
+      this.focus(vertical[index + 1]);
+    }
+  }
+
+  focus(id: string) {
+    setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) el.focus();
+    });
+  }
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
     const password = control.get('password');
     const confirmPassword = control.get('confirmPassword');
@@ -92,8 +179,52 @@ export class RegisterComponent implements OnInit {
     }
   }
 
+  // Availability check methods
+  onAliasBlur() {
+    const c = this.alias;
+    if (c?.valid) {
+      this.usernameAvailability.checking = true;
+
+      this.availabilityService.checkUsernameAvailability(c.value)
+        .subscribe((available: boolean) => {
+
+          this.usernameAvailability.available = available;
+          this.usernameAvailability.checking = false;
+
+          this.cdr.detectChanges(); // 👈 refresco inmediato de UI
+        });
+    }
+  }
+
+
+
+  onEmailBlur() {
+    const c = this.email;
+    if (c?.valid) {
+      this.emailAvailability.checking = true;
+
+      this.availabilityService.checkEmailAvailability(c.value)
+        .subscribe((available: boolean) => {
+
+          this.emailAvailability.available = available;
+          this.emailAvailability.checking = false;
+
+          this.cdr.detectChanges(); // 👈 refresco inmediato
+        });
+    }
+  }
+
+
+
 
   onRegisterSubmit(): void {
+    // Check if username and email are available before submitting
+    if (this.usernameAvailability.available === false || this.emailAvailability.available === false) {
+      this.message = 'Por favor, usa un alias y correo únicos.';
+      this.toast.show('Por favor, usa un alias y correo únicos.', 'error');
+      return;
+    }
+
     if (this.registerForm.valid) {
       this.isLoading = true;
       this.message = null;
@@ -182,4 +313,6 @@ export class RegisterComponent implements OnInit {
   get day() { return this.registerForm.get('day'); }
   get month() { return this.registerForm.get('month'); }
   get year() { return this.registerForm.get('year'); }
+
+  
 }
