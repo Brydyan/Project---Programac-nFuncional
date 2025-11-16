@@ -28,13 +28,10 @@ public class AuthService {
         UserEntity user = userService.findByIdentifier(req.getIdentifier())
                 .orElseThrow(() -> new RuntimeException("Usuario o contraseña incorrectos"));
 
-        boolean ok;
-
-        if (user.getPassword().startsWith("$2a$") || user.getPassword().startsWith("$2b$")) {
-            ok = encoder.matches(req.getPassword(), user.getPassword());
-        } else {
-            ok = user.getPassword().equals(req.getPassword());
-        }
+        boolean ok = user.getPassword().startsWith("$2a$")
+                || user.getPassword().startsWith("$2b$")
+                ? encoder.matches(req.getPassword(), user.getPassword())
+                : user.getPassword().equals(req.getPassword());
 
         if (!ok) throw new RuntimeException("Usuario o contraseña incorrectos");
 
@@ -45,8 +42,8 @@ public class AuthService {
         String ip = request.getRemoteAddr();
         String browser = request.getHeader("User-Agent");
 
-        // Crear sesión en Mongo + Redis
-        sessionService.createSession(
+        // Crear sesión y activar presencia
+        var session = sessionService.createSession(
                 user.getId(),
                 token,
                 "WEB",
@@ -55,7 +52,6 @@ public class AuthService {
                 Instant.now().plusSeconds(3600 * 24)
         );
 
-        // Respuesta para frontend
         return new AuthResponse(token, user.getId(), user.getUsername());
     }
 }

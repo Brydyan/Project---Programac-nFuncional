@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import ec.edu.upse.backend.Entity.SessionEntity;
 import ec.edu.upse.backend.Repository.SessionRepository;
@@ -18,11 +19,24 @@ public class SessionService {
     private final SessionRepository repo;
     private final RealtimePresenceService presence;
 
-    // CREATE sesión
-    public SessionEntity createSession(String userId, String token, String device,
-                                       String ip, String browser, Instant expiresAt) {
+    // ==================================================
+    // CREAR SESIÓN (Login)
+    // ==================================================
+    @Transactional
+    public SessionEntity createSession(
+            String userId,
+            String token,
+            String device,
+            String ip,
+            String browser,
+            Instant expiresAt
+    ) {
+
+        // Cerrar sesiones vencidas del usuario automáticamente
+        cleanupExpiredSessions(userId);
 
         SessionEntity s = new SessionEntity();
+        s.setId(null); // generar automáticamente
         s.setSessionId(UUID.randomUUID().toString());
         s.setUserId(userId);
         s.setToken(token);
@@ -30,54 +44,105 @@ public class SessionService {
         s.setIpAddress(ip);
         s.setBrowser(browser);
         s.setStatus("active");
-        s.setExpiresAt(expiresAt);
         s.setValid(true);
+
+        Instant now = Instant.now();
+        s.setLoginAt(now);
+        s.setLastActivity(now);
+        s.setExpiresAt(expiresAt);
 
         repo.save(s);
 
-        // Activar presencia en Redis
+        // Hacer visible al usuario en tiempo real
         presence.setOnline(userId, s.getSessionId());
 
         return s;
     }
 
-    // REFRESH
+    // ==================================================
+    // REFRESCAR ACTIVIDAD (cada request válida)
+    // ==================================================
     public void refreshActivity(String sessionId) {
-        Optional<SessionEntity> opt = repo.findById(sessionId);
-        if (opt.isPresent()) {
-            SessionEntity s = opt.get();
+        repo.findBySessionId(sessionId).ifPresent(s -> {
+            // Si ya expiró → invalidar automáticamente
+            if (s.getExpiresAt().isBefore(Instant.now())) {
+                invalidateSession(s);
+                return;
+            }
+
             s.setLastActivity(Instant.now());
             repo.save(s);
 
-            // Actualizar presencia
+            // Mantener presencia en Redis
             presence.refresh(s.getUserId(), s.getSessionId());
-        }
+        });
     }
 
-    // LOGOUT sesión
+    // ==================================================
+    // LOGOUT (solo una sesión)
+    // ==================================================
     public void logout(String sessionId) {
-        Optional<SessionEntity> opt = repo.findById(sessionId);
-        if (opt.isPresent()) {
-            SessionEntity s = opt.get();
-            s.setValid(false);
-            s.setStatus("inactive");
-            repo.save(s);
-
-            // Quitar presencia
-            presence.setOffline(s.getUserId(), s.getSessionId());
-        }
+        repo.findBySessionId(sessionId).ifPresent(this::invalidateSession);
     }
 
-    // LOGOUT GLOBAL
+    // ==================================================
+    // LOGOUT GLOBAL (cerrar todas)
+    // ==================================================
+    @Transactional
     public void logoutAll(String userId) {
         List<SessionEntity> list = repo.findByUserId(userId);
-        for (SessionEntity s : list) logout(s.getId());
+        for (SessionEntity s : list) invalidateSession(s);
     }
 
-    // Listados
-    public List<SessionEntity> getAll() { return repo.findAll(); }
-    public Optional<SessionEntity> getById(String id) { return repo.findById(id); }
-    public List<SessionEntity> getByUserId(String u) { return repo.findByUserId(u); }
-    public Optional<SessionEntity> getByToken(String t) { return repo.findByToken(t); }
-}
+    // ==================================================
+    // OBTENER SESIONES
+    // ==================================================
+    public List<SessionEntity> getAll() {
+        return repo.findAll();
+    }
 
+    public Optional<SessionEntity> getById(String id) {
+        return repo.findById(id);
+    }
+
+    public Optional<SessionEntity> getByToken(String token) {
+        return repo.findByToken(token);
+    }
+
+    public List<SessionEntity> getByUserId(String userId) {
+        return repo.findByUserId(userId);
+    }
+
+    // ==================================================
+    // VALIDAR SESIÓN (para filtros de seguridad)
+    // ==================================================
+    public Optional<SessionEntity> validateSession(String token) {
+        return repo.findByTokenAndValidTrue(token)
+                .filter(s -> s.getExpiresAt().isAfter(Instant.now()));
+    }
+
+    // ==================================================
+    // LIMPIEZA DE SESIONES VENCIDAS
+    // ==================================================
+    public void cleanupExpiredSessions(String userId) {
+        List<SessionEntity> sessions = repo.findByUserId(userId);
+
+        Instant now = Instant.now();
+        for (SessionEntity s : sessions) {
+            if (s.getExpiresAt().isBefore(now)) {
+                invalidateSession(s);
+            }
+        }
+    }
+
+    // ==================================================
+    // MÉTODO INTERNO: invalidar sesión
+    // ==================================================
+    private void invalidateSession(SessionEntity s) {
+        s.setValid(false);
+        s.setStatus("inactive");
+        repo.save(s);
+
+        presence.setOffline(s.getUserId(), s.getSessionId());
+    }
+}
