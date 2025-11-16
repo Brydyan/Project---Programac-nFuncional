@@ -1,0 +1,350 @@
+/* Fondo general oscuro profundo */
+:host {
+  display: block;
+  height: 100vh;
+  background-color: #0a0a0f; /* fondo negro muy oscuro */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e0e0; /* texto gris claro para legibilidad */
+  overflow: hidden;
+}
+
+/* Contenedor principal */
+.dashboard-container {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* BARRA SUPERIOR */
+.menubar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #121217;  /* barra ligeramente más clara que el fondo */
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  color: #e0e0e0;
+  user-select: none;
+}
+
+.app-title {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #7e78d2; /* azul brillante */
+}
+
+.menu-items {
+  display: flex;
+  gap: 2rem;
+}
+
+.menu-button {
+  background: none;
+  border: none;
+  color: #bbbbbb;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  transition: color 0.3s, background-color 0.3s;
+}
+
+.menu-button:hover,
+.menu-button.active {
+  color: #7e78d2;
+  background-color: #222232;
+}
+
+.search-input {
+  background-color: #222232;
+  border: none;
+  border-radius: 12px;
+  color: #cccccc;
+  padding: 0.5rem 1rem;
+  width: 280px;
+  transition: border-color 0.3s ease;
+}
+
+.search-input::placeholder {
+  color: #666680;
+}
+
+.search-input:focus {
+  outline: none;
+  border: 1px solid #7e78d2;
+}
+
+/* PERFIL Y CERRAR SESIÓN */
+.menubar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info {
+  font-weight: 600;
+  color: #eeeeee;
+}
+
+.logout-button {
+  background-color: #ce4450; /* rojo apagado */
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background-color 0.3s ease;
+}
+
+.logout-button:hover {
+  background-color: #b03545;
+}
+
+/* CONTENEDOR PRINCIPAL: MENU LATERAL Y CONTENIDO */
+.main-content {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: calc(100vh - 72px); /* descontar altura barra superior */
+  background-color: #0a0a0f;
+  overflow: hidden;
+}
+
+/* MENU LATERAL */
+.sidebar-menu {
+  background-color: #121217;
+  border-right: 1px solid #22222a;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0;
+  overflow-y: auto;
+}
+
+.menu-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 1rem;
+}
+
+.menu-section {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: #ababbb;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.3s, color 0.3s;
+  user-select: none;
+}
+
+.menu-section:hover,
+.menu-section.active {
+  background-color: #222232;
+  color: #7e78d2;
+}
+
+.menu-icon {
+  margin-right: 0.75rem;
+  font-size: 1.3rem;
+}
+
+/* CONTENIDO PRINCIPAL */
+.content-pane {
+  padding: 2rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  background-color: #121217;
+}
+
+/* SECCIÓN DE BIENVENIDA */
+.welcome-section {
+  max-width: 600px;
+  margin: auto;
+  text-align: center;
+  color: #d0d0ff;
+}
+
+.welcome-section h2 {
+  font-weight: 700;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: #a29ff8;
+}
+
+.welcome-section p {
+  font-weight: 400;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+  color: #a9a9cb;
+}
+
+/* BARRA DE BUSQUEDA Y BOTONES */
+.channel-search {
+  display: flex;
+  max-width: 720px;
+  margin: 0 auto;
+  gap: 1rem;
+}
+
+.channel-search input {
+  flex-grow: 1;
+  padding: 0.6rem 1rem;
+  border-radius: 12px;
+  border: none;
+  background-color: #222232;
+  color: #ddddff;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.channel-search input:focus {
+  border: 1px solid #7e78d2;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background-color: #7e78d2;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #9d9bee;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 2px solid #7e78d2;
+  color: #7e78d2;
+}
+
+.btn-secondary:hover {
+  background-color: #7e78d2;
+  color: black;
+}
+
+/* GRID DE CANALES */
+.channels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(280px,1fr));
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* TARJETA DE CANALES */
+.channel-card {
+  background-color: #222232;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: inset 0 0 10px #171725;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #d3d3f0;
+}
+
+.channel-card h3 {
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.channel-card p {
+  font-size: 0.95rem;
+  color: #a7a7cd;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+.channel-card span {
+  font-size: 0.85rem;
+  color: #8686aa;
+  margin-bottom: 1rem;
+}
+
+.channel-card button {
+  align-self: flex-start;
+  background-color: #0f3460;
+  border: none;
+  color: white;
+  padding: 0.5rem 1.2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.3s;
+}
+
+.channel-card button:hover {
+  background-color: #425aff;
+}
+
+/* PIE DE PÁGINA */
+.footer {
+  background-color: #121217;
+  border-top: 2px solid #0f3460;
+  color: #65657c;
+  font-weight: 400;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* SCROLLBARS PERSONALIZADOS */
+.sidebar-menu::-webkit-scrollbar,
+.content-pane::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar-menu::-webkit-scrollbar-track,
+.content-pane::-webkit-scrollbar-track {
+  background: #0f3460;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb,
+.content-pane::-webkit-scrollbar-thumb {
+  background: #7e78d2;
+  border-radius: 4px;
+}
+
+.sidebar-menu::-webkit-scrollbar-thumb:hover,
+.content-pane::-webkit-scrollbar-thumb:hover {
+  background: #a9a7ff;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar-menu {
+    display: none;
+  }
+
+  .menubar {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+}

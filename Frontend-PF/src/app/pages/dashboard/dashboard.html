@@ -1,0 +1,50 @@
+<div class="dashboard-container">
+  <header class="menubar">
+    <div class="menubar-left">
+      <h1 class="app-title">YARG - Flow</h1>
+    </div>
+    <div class="menubar-center">
+      <nav class="menu-items">
+        <button class="menu-button" (click)="addFriend()">Añadir amigo</button>
+        <button class="menu-button" (click)="viewNotifications()">Notificaciones</button>
+        <button class="menu-button" (click)="getHelp()">Ayuda o Soporte</button>
+        <input 
+          type="text" 
+          class="search-input" 
+          placeholder="Buscar Conversación o Canal"
+          [(ngModel)]="searchText"
+          (keyup.enter)="onSearch()"
+        />
+      </nav>
+    </div>
+    <div class="menubar-right">
+      <span class="user-info">👤 Usuario</span>
+      <button class="logout-button" (click)="logout()">Salir</button>
+    </div>
+  </header>
+
+  <div class="main-content">
+    <aside class="sidebar-menu">
+      <div class="menu-sections">
+        <div *ngFor="let section of menuSections" 
+             class="menu-section"
+             (click)="navigateToSection(section)">
+          <span class="menu-icon">{{ section.icon }}</span>
+          <span class="menu-title">{{ section.title }}</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content-pane">
+      <div class="welcome-section">
+        <h2>¡Bienvenido a nuestra aplicación!</h2>
+        <p>Gracias por ingresar. Estamos encantados de tenerte aquí.</p>
+        <p>Explora las diferentes secciones del menú lateral para comenzar a usar todas las funcionalidades de nuestra plataforma.</p>
+      </div>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <p>© 2025 YARG FLOW - Todos los derechos reservados</p>
+  </footer>
+</div>
