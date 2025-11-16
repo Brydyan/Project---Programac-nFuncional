@@ -1,99 +1,83 @@
 package ec.edu.upse.backend.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import ec.edu.upse.backend.Domain.SessionValidator;
 import ec.edu.upse.backend.Entity.SessionEntity;
 import ec.edu.upse.backend.Repository.SessionRepository;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class SessionService {
-    @Autowired
-    private SessionRepository sessionRepository;
 
-    // CREATE
-    public SessionEntity save(SessionEntity session) {
-        if (!SessionValidator.esUserIdValido(session.getUserId())) {
-            throw new IllegalArgumentException("UserId inválido para sesión");
+    private final SessionRepository repo;
+    private final RealtimePresenceService presence;
+
+    // CREATE sesión
+    public SessionEntity createSession(String userId, String token, String device,
+                                       String ip, String browser, Instant expiresAt) {
+
+        SessionEntity s = new SessionEntity();
+        s.setSessionId(UUID.randomUUID().toString());
+        s.setUserId(userId);
+        s.setToken(token);
+        s.setDevice(device);
+        s.setIpAddress(ip);
+        s.setBrowser(browser);
+        s.setStatus("active");
+        s.setExpiresAt(expiresAt);
+        s.setValid(true);
+
+        repo.save(s);
+
+        // Activar presencia en Redis
+        presence.setOnline(userId, s.getSessionId());
+
+        return s;
+    }
+
+    // REFRESH
+    public void refreshActivity(String sessionId) {
+        Optional<SessionEntity> opt = repo.findById(sessionId);
+        if (opt.isPresent()) {
+            SessionEntity s = opt.get();
+            s.setLastActivity(Instant.now());
+            repo.save(s);
+
+            // Actualizar presencia
+            presence.refresh(s.getUserId(), s.getSessionId());
         }
-        if (!SessionValidator.esTokenValido(session.getToken())) {
-            throw new IllegalArgumentException("Token inválido para sesión");
+    }
+
+    // LOGOUT sesión
+    public void logout(String sessionId) {
+        Optional<SessionEntity> opt = repo.findById(sessionId);
+        if (opt.isPresent()) {
+            SessionEntity s = opt.get();
+            s.setValid(false);
+            s.setStatus("inactive");
+            repo.save(s);
+
+            // Quitar presencia
+            presence.setOffline(s.getUserId(), s.getSessionId());
         }
-
-        String normalizedStatus = SessionValidator.normalizarStatus(session.getStatus());
-        if (normalizedStatus == null) {
-            throw new IllegalArgumentException("Status de sesión inválido");
-        }
-
-        session.setStatus(normalizedStatus);
-        // horaFecha ya se setea por defecto en la entidad
-
-        return sessionRepository.save(session);
     }
 
-    // READ
-    public List<SessionEntity> getAllSessions() {
-        return sessionRepository.findAll();
+    // LOGOUT GLOBAL
+    public void logoutAll(String userId) {
+        List<SessionEntity> list = repo.findByUserId(userId);
+        for (SessionEntity s : list) logout(s.getId());
     }
 
-    public Optional<SessionEntity> getSessionById(String id) {
-        return sessionRepository.findById(id);
-    }
-
-    public Optional<SessionEntity> getSessionByToken(String token) {
-        return sessionRepository.findByToken(token);
-    }
-
-    public List<SessionEntity> getSessionsByUserId(String userId) {
-        return sessionRepository.findByUserId(userId);
-    }
-
-    public List<SessionEntity> getSessionsByStatus(String status) {
-        return sessionRepository.findByStatus(status);
-    }
-
-    public List<SessionEntity> getSessionsByDevice(String device) {
-        return sessionRepository.findByDevice(device);
-    }
-
-    // UPDATE
-    public SessionEntity updateSession(String id, SessionEntity newData) {
-        Optional<SessionEntity> aux = sessionRepository.findById(id);
-        if (aux.isPresent()) {
-            SessionEntity session = aux.get();
-
-            String normalizedStatus = SessionValidator.normalizarStatus(newData.getStatus());
-            if (normalizedStatus == null) {
-                throw new IllegalArgumentException("Status de sesión inválido");
-            }
-
-            session.setStatus(normalizedStatus);
-            session.setDevice(newData.getDevice());
-            session.setIpAddress(newData.getIpAddress());
-            session.setLocation(newData.getLocation());
-            session.setBrowser(newData.getBrowser());
-            // horaFecha podrías actualizarla si consideras que cambia al modificar
-            return sessionRepository.save(session);
-        }
-        return null;
-    }
-
-    // DELETE
-    public boolean deleteSession(String id) {
-        if (sessionRepository.existsById(id)) {
-            sessionRepository.deleteById(id);
-            return true;
-        }
-        return false;
-    }
-
-    // DELETE all sessions by user
-    public void deleteSessionsByUserId(String userId) {
-        List<SessionEntity> sessions = sessionRepository.findByUserId(userId);
-        sessionRepository.deleteAll(sessions);
-    }
+    // Listados
+    public List<SessionEntity> getAll() { return repo.findAll(); }
+    public Optional<SessionEntity> getById(String id) { return repo.findById(id); }
+    public List<SessionEntity> getByUserId(String u) { return repo.findByUserId(u); }
+    public Optional<SessionEntity> getByToken(String t) { return repo.findByToken(t); }
 }
+
