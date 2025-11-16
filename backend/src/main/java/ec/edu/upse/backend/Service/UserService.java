@@ -128,4 +128,11 @@ public class UserService {
         return false;
     }
 
+    public Optional<UserEntity> findByIdentifier(String idOrEmail) {
+    Optional<UserEntity> u = userRepository.findByUsername(idOrEmail);
+    if (u.isEmpty())
+        u = userRepository.findByEmail(idOrEmail);
+    return u;
+}
+
 }
