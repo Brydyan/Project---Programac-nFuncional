@@ -1,59 +1,49 @@
-<form [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()" novalidate>
-  
-  <div class="logo-container">
-    <h1><span class="logo-icon">💬</span> YARG Flow</h1>
-    <h2 class="form-title">Iniciar sesión</h2>
-  </div>
+<form [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()" class="login-form">
 
+  <h2 class="title">Iniciar Sesión</h2>
+
+  <!-- EMAIL -->
   <div class="form-group">
     <label for="email">Correo electrónico</label>
-    <input
-      id="email"
-      formControlName="email"
-      type="email"
-      placeholder="correo@ejemplo.com"
-      autocomplete="email"
-    />
-    @if (email?.invalid && email?.touched) {
-      <div class="error-message">
-        Correo electrónico inválido.
-      </div>
-    }
+    <input id="email" type="email" formControlName="email" placeholder="correo@ejemplo.com" autocomplete="email" />
+    <small *ngIf="email?.touched && email?.invalid" class="error">
+      Correo inválido
+    </small>
   </div>
 
+  <!-- PASSWORD -->
   <div class="form-group">
-    
+
     <div class="label-row">
       <label for="password">Contraseña</label>
       <a class="forgot-password-link" (click)="onForgotPassword()">¿Olvidó su contraseña?</a>
     </div>
 
-    <input
-      id="password"
-      [type]="showPassword ? 'text' : 'password'"
-      formControlName="password"
-      placeholder="••••••••"
-      autocomplete="current-password"
-    />
+    <input id="password" [type]="showPassword ? 'text' : 'password'" formControlName="password" placeholder="••••••••"
+      autocomplete="current-password" />
     @if (password?.invalid && password?.touched) {
-      <div class="error-message">
-        La contraseña es requerida.
-      </div>
+    <div class="error-message">
+      La contraseña es requerida.
+    </div>
     }
   </div>
   <label class="checkbox-label">
     <input type="checkbox" (change)="toggleShowPassword()" /> Mostrar Contraseña
   </label>
 
-  <button type="submit" [disabled]="loginForm.invalid || isLoading">
-    Iniciar Sesión
+  <!-- ERROR MESSAGE -->
+  <div *ngIf="message" class="message error">
+    {{ message }}
+  </div>
+
+  <!-- LOGIN BUTTON -->
+  <button type="submit" class="btn" [disabled]="loginForm.invalid || isLoading">
+    {{ isLoading ? 'Ingresando...' : 'Iniciar Sesión' }}
   </button>
-  <div *ngIf="isLoading" class="info-message">Enviando...</div>
-  <div *ngIf="message" class="info-message">{{ message }}</div>
-  
+
+  <!-- LINKS -->
   <div class="footer-link">
     ¿No tienes una Cuenta? <a (click)="onGoToRegister()">Regístrate</a>
   </div>
-
 
 </form>
