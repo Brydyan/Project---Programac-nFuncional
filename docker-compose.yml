@@ -9,7 +9,7 @@ services:
     environment:
       - MONGO_URL=mongodb://root:mi_clave_secreta@mongodb:27017/
       - SPRING_DATA_MONGODB_URI=mongodb://root:mi_clave_secreta@mongodb:27017/YARGFlow?authSource=admin
-      - REDIS_HOST=redis
+      - REDIS_HOST=mi_redis
       - REDIS_PORT=6379
     depends_on:
       - mongodb

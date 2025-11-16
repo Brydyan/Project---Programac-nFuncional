@@ -7,15 +7,20 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
 @Document(collection = "Sessions")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class SessionEntity {
 
     @Id
     private String id;
 
-    private String sessionId;       // Identificador de sesión único
+    private String sessionId;       // Identificador único de sesión
     private String userId;
     private String token;           // JWT único por dispositivo
     private String status;          // active | inactive
@@ -28,5 +33,5 @@ public class SessionEntity {
     private Instant lastActivity = Instant.now();
     private Instant expiresAt;      // Expiración del JWT
 
-    private boolean valid = true;   //Para invalidar sesiones
+    private boolean valid = true;   // Para invalidar sesiones
 }
