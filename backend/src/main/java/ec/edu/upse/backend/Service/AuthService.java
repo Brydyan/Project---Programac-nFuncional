@@ -1,7 +1,5 @@
 package ec.edu.upse.backend.Service;
 
-import java.time.Instant;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -43,13 +41,14 @@ public class AuthService {
         String browser = request.getHeader("User-Agent");
 
         // Crear sesión y activar presencia
+        // Create a session without an expiration (persistent) — will be invalidated only on logout
         var session = sessionService.createSession(
                 user.getId(),
                 token,
                 "WEB",
                 ip,
                 browser,
-                Instant.now().plusSeconds(3600 * 24)
+                null
         );
 
         return new AuthResponse(token, user.getId(), user.getUsername());

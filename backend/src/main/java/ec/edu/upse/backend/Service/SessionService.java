@@ -64,8 +64,8 @@ public class SessionService {
     // ==================================================
     public void refreshActivity(String sessionId) {
         repo.findBySessionId(sessionId).ifPresent(s -> {
-            // Si ya expiró → invalidar automáticamente
-            if (s.getExpiresAt().isBefore(Instant.now())) {
+            // Si tiene fecha de expiración y ya expiró → invalidar automáticamente
+            if (s.getExpiresAt() != null && s.getExpiresAt().isBefore(Instant.now())) {
                 invalidateSession(s);
                 return;
             }
@@ -118,7 +118,8 @@ public class SessionService {
     // ==================================================
     public Optional<SessionEntity> validateSession(String token) {
         return repo.findByTokenAndValidTrue(token)
-                .filter(s -> s.getExpiresAt().isAfter(Instant.now()));
+            // If expiresAt is null -> treat as non-expiring; otherwise check date
+            .filter(s -> s.getExpiresAt() == null || s.getExpiresAt().isAfter(Instant.now()));
     }
 
     // ==================================================
@@ -129,7 +130,7 @@ public class SessionService {
 
         Instant now = Instant.now();
         for (SessionEntity s : sessions) {
-            if (s.getExpiresAt().isBefore(now)) {
+            if (s.getExpiresAt() != null && s.getExpiresAt().isBefore(now)) {
                 invalidateSession(s);
             }
         }

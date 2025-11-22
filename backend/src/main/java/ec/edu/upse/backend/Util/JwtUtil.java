@@ -15,20 +15,25 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expiration-hours:24}")
+    @Value("${jwt.expiration-hours:-1}")
     private int expirationHours;
 
     public String generateToken(String userId, String username) {
         Algorithm algorithm = Algorithm.HMAC256(secret);
         Instant now = Instant.now();
         Date issuedAt = Date.from(now);
-        Date expiresAt = Date.from(now.plusSeconds(expirationHours * 3600L));
 
-        return JWT.create()
-                .withSubject(userId)
-                .withClaim("username", username)
-                .withIssuedAt(issuedAt)
-                .withExpiresAt(expiresAt)
-                .sign(algorithm);
+        var builder = JWT.create()
+            .withSubject(userId)
+            .withClaim("username", username)
+            .withIssuedAt(issuedAt);
+
+        // If expirationHours is <= 0 we treat token as non-expiring (no exp claim)
+        if (expirationHours > 0) {
+            Date expiresAt = Date.from(now.plusSeconds(expirationHours * 3600L));
+            builder = builder.withExpiresAt(expiresAt);
+        }
+
+        return builder.sign(algorithm);
     }
 }
