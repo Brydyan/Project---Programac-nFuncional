@@ -1,50 +1,92 @@
-<div class="dashboard-container">
-  <header class="menubar">
-    <div class="menubar-left">
-      <h1 class="app-title">YARG - Flow</h1>
+<div class="dashboard-shell">
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="app-logo">YF</div>
+      <div class="app-meta">
+        <h1 class="app-title">YARG Flow</h1>
+        <span class="app-subtitle">Mensajería en tiempo real</span>
+      </div>
     </div>
-    <div class="menubar-center">
-      <nav class="menu-items">
-        <button class="menu-button" (click)="addFriend()">Añadir amigo</button>
-        <button class="menu-button" (click)="viewNotifications()">Notificaciones</button>
-        <button class="menu-button" (click)="getHelp()">Ayuda o Soporte</button>
-        <input 
-          type="text" 
-          class="search-input" 
-          placeholder="Buscar Conversación o Canal"
+
+    <div class="topbar-center">
+      <div class="topbar-actions">
+        <button class="chip-button" (click)="addFriend()">＋ Amigo</button>
+        <button class="chip-button" (click)="viewNotifications()">🔔 Notif.</button>
+        <button class="chip-button" (click)="getHelp()">❓ Ayuda</button>
+      </div>
+
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar conversación o canal"
           [(ngModel)]="searchText"
           (keyup.enter)="onSearch()"
         />
-      </nav>
+      </div>
     </div>
-    <div class="menubar-right">
-      <span class="user-info">👤 Usuario</span>
+
+    <div class="topbar-right">
+      <div class="user-pill">
+        <span class="user-avatar">👤</span>
+        <span class="user-name">Usuario</span>
+      </div>
       <button class="logout-button" (click)="logout()">Salir</button>
     </div>
   </header>
 
-  <div class="main-content">
-    <aside class="sidebar-menu">
-      <div class="menu-sections">
-        <div *ngFor="let section of menuSections" 
-             class="menu-section"
-             (click)="navigateToSection(section)">
+  <!-- CONTENIDO PRINCIPAL: SIDEBAR + WORKSPACE -->
+  <div class="dashboard-main">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Navegación</span>
+      </div>
+
+      <nav class="menu-sections">
+        <button
+          *ngFor="let section of menuSections"
+          class="menu-section"
+          type="button"
+          (click)="navigateToSection(section)"
+        >
           <span class="menu-icon">{{ section.icon }}</span>
           <span class="menu-title">{{ section.title }}</span>
-        </div>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="status-dot"></span>
+        <span class="status-text">Conectado</span>
       </div>
     </aside>
 
-    <main class="content-pane">
-      <div class="welcome-section">
-        <h2>¡Bienvenido a nuestra aplicación!</h2>
-        <p>Gracias por ingresar. Estamos encantados de tenerte aquí.</p>
-        <p>Explora las diferentes secciones del menú lateral para comenzar a usar todas las funcionalidades de nuestra plataforma.</p>
-      </div>
-    </main>
+    <!-- WORKSPACE (AQUÍ VAN LAS RUTAS HIJAS: chat-thread, etc.) -->
+    <main class="workspace">
+      <router-outlet
+        (activate)="onChildActivate()"
+        (deactivate)="onChildDeactivate()"
+      ></router-outlet>
+
+    <!-- MOSTRAR SOLO SI NO HAY COMPONENTE HIJO ACTIVO -->
+    <div class="workspace-empty" *ngIf="!hasChildActive">
+      <h2>Bienvenido a YARG Flow 👋</h2>
+      <p class="empty-text">
+        Selecciona una conversación en el menú lateral o inicia un nuevo chat.
+      </p>
+      <p class="empty-hint">
+        Usa la barra de búsqueda de arriba para encontrar canales y contactos.
+      </p>
+    </div>
+  </main>
   </div>
 
-  <footer class="footer">
-    <p>© 2025 YARG FLOW - Todos los derechos reservados</p>
+  <!-- FOOTER -->
+  <footer class="dashboard-footer">
+    <span>© 2025 YARG FLOW</span>
+    <span class="dot-separator">•</span>
+    <span>Proyecto PF · Universidad</span>
   </footer>
 </div>
