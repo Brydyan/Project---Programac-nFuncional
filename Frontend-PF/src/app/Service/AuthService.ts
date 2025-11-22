@@ -72,4 +72,12 @@ export class AuthService {
   logout() {
     localStorage.removeItem('token');
   }
+
+  // ============================
+  //  🔵 VALIDAR TOKEN (auto-login)
+  // ============================
+  validateToken(token: string) {
+    if (!token) return this.http.get(`${this.api}/sessions/token/invalid-token`);
+    return this.http.get(`${this.api}/sessions/token/${token}`);
+  }
 }
