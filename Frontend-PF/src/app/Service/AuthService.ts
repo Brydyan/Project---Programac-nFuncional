@@ -23,8 +23,8 @@ export interface UserEntity {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  // 🔥 Tu backend corre en docker → http://localhost:8081/app/v1
-  private api = 'http://localhost:8081/app/v1';
+  // API base: use the current host so mobile devices accessing the app via PC IP work
+  private api = `${location.protocol}//${location.hostname}:8081/app/v1`;
 
   constructor(private http: HttpClient) {}
 
