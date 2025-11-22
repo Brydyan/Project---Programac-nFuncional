@@ -9,10 +9,21 @@ export class SessionService {
 
   constructor(private http: HttpClient) {}
 
+  // Refresh activity by token
   refreshActivity(): Observable<any> {
     const token = localStorage.getItem('token');
     if (!token) return new Observable();
 
     return this.http.post(`${this.api}/refresh/${token}`, {});
+  }
+
+  // Get session info by token
+  getByToken(token: string): Observable<any> {
+    return this.http.get(`${this.api}/token/${token}`);
+  }
+
+  // Logout a session by sessionId
+  logout(sessionId: string): Observable<any> {
+    return this.http.post(`${this.api}/logout/${sessionId}`, {});
   }
 }
