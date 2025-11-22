@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class SessionService {
 
-  private api = 'http://localhost:8081/app/v1/sessions';
+  private api = `${location.protocol}//${location.hostname}:8081/app/v1/sessions`;
 
   constructor(private http: HttpClient) {}
 
