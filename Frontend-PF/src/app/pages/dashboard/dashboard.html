@@ -1,3 +1,4 @@
+<!-- src/app/dashboard/dashboard.html -->
 <div class="dashboard-container">
   <header class="menubar">
     <div class="menubar-left">
@@ -26,9 +27,12 @@
   <div class="main-content">
     <aside class="sidebar-menu">
       <div class="menu-sections">
-        <div *ngFor="let section of menuSections" 
-             class="menu-section"
-             (click)="navigateToSection(section)">
+        <div
+          *ngFor="let section of menuSections"
+          class="menu-section"
+          [class.active]="activeSection === section.title"
+          (click)="navigateToSection(section)"
+        >
           <span class="menu-icon">{{ section.icon }}</span>
           <span class="menu-title">{{ section.title }}</span>
         </div>
@@ -36,11 +40,35 @@
     </aside>
 
     <main class="content-pane">
-      <div class="welcome-section">
-        <h2>¡Bienvenido a nuestra aplicación!</h2>
-        <p>Gracias por ingresar. Estamos encantados de tenerte aquí.</p>
-        <p>Explora las diferentes secciones del menú lateral para comenzar a usar todas las funcionalidades de nuestra plataforma.</p>
-      </div>
+      <!-- Contenido dinámico según sección activa -->
+      <ng-container *ngIf="activeSection === 'Configuración'">
+        <!-- Contenido configuración de usuario -->
+        <!--<app-user-settings></app-user-settings>-->
+      </ng-container>
+
+      <ng-container *ngIf="activeSection !== 'Configuración'">
+        <!-- Existing content, e.g. welcome -->
+        <div class="welcome-section" *ngIf="activeSection === 'Conversaciones'">
+          <h2>Conversaciones</h2>
+          <p>Aquí va el contenido de las conversaciones...</p>
+        </div>
+
+        <div class="welcome-section" *ngIf="activeSection === 'Canales'">
+          <h2>Canales</h2>
+          <p>Aquí va el contenido de los canales...</p>
+        </div>
+
+        <div class="welcome-section" *ngIf="activeSection === 'Perfil'">
+          <h2>Perfil</h2>
+          <p>Aquí va el contenido del perfil...</p>
+        </div>
+
+        <div class="welcome-section" *ngIf="activeSection === ''">
+          <h2>¡Bienvenido a nuestra aplicación!</h2>
+          <p>Gracias por ingresar. Estamos encantados de tenerte aquí.</p>
+          <p>Explora las diferentes secciones del menú lateral para comenzar a usar todas las funcionalidades de nuestra plataforma.</p>
+        </div>
+      </ng-container>
     </main>
   </div>
 
