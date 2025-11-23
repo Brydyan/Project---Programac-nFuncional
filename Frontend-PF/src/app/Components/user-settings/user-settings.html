@@ -1,0 +1,200 @@
+<div class="user-settings-container">
+  <div class="settings-header">
+    <h1>Configuración General</h1>
+  </div>
+
+  <div class="settings-content">
+    <!-- Sección Perfil del Usuario -->
+    <section class="settings-section">
+      <h2>Perfil del Usuario</h2>
+      <p class="section-description">Actualiza tu información personal aquí.</p>
+      
+      <div class="form-group">
+        <label for="username">Nombre de Usuario</label>
+        <input 
+          type="text" 
+          id="username"
+          [(ngModel)]="username" 
+          class="form-input"
+          placeholder="UsuarioPureChat"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="status">Estado</label>
+        <select 
+          id="status"
+          [(ngModel)]="selectedStatus" 
+          class="form-select"
+        >
+          <option *ngFor="let option of statusOptions" [value]="option">
+            {{ option }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Foto de Perfil</label>
+        <div class="photo-section">
+          <div class="photo-preview">
+            <div *ngIf="!profileImage" class="photo-placeholder">
+              <span class="photo-icon">👤</span>
+            </div>
+            <img *ngIf="profileImage" [src]="profileImage" alt="Foto de perfil" class="profile-photo">
+          </div>
+          <button type="button" class="btn-change-photo" (click)="changePhoto()">
+            Cambiar Foto
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Primera sección de Notificaciones -->
+    <section class="settings-section">
+      <h2>Notificaciones</h2>
+      <p class="section-description">Configura cómo y cuando recibir alertas.</p>
+      
+      <div class="toggle-group">
+        <label class="toggle-item">
+          <input type="checkbox" [(ngModel)]="notificationsSettings.activate" />
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Activar notificaciones</span>
+        </label>
+
+        <label class="toggle-item">
+          <input type="checkbox" [(ngModel)]="notificationsSettings.sound" />
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Sonidos de mensajes</span>
+        </label>
+
+        <label class="toggle-item">
+          <input type="checkbox" [(ngModel)]="notificationsSettings.desktop" />
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Notificaciones en el escritorio</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Sección Apariencia -->
+    <section class="settings-section">
+      <h2>Apariencia</h2>
+      <p class="section-description">Personaliza el aspecto de la aplicación.</p>
+      
+      <div class="toggle-group">
+        <label class="toggle-item">
+          <input type="checkbox" [(ngModel)]="appearanceSettings.darkMode" />
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Modo Oscuro</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="fontSize">Tamaño de Fuente: {{appearanceSettings.fontSize}}px</label>
+        <input 
+          type="range" 
+          id="fontSize"
+          min="12" 
+          max="24" 
+          [(ngModel)]="appearanceSettings.fontSize"
+          class="font-slider"
+        />
+      </div>
+    </section>
+
+    <!-- Segunda sección de Notificaciones -->
+    <section class="settings-section">
+      <h2>Notificaciones</h2>
+      <p class="section-description">Controla cómo recibes las notificaciones de la aplicación.</p>
+      
+      <div class="toggle-group">
+        <label class="toggle-item">
+          <input type="checkbox" [(ngModel)]="notificationPreferences.email" />
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Notificaciones por correo electrónico</span>
+        </label>
+
+        <label class="toggle-item">
+          <input type="checkbox" [(ngModel)]="notificationPreferences.push" />
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Notificaciones push</span>
+        </label>
+
+        <label class="toggle-item">
+          <input type="checkbox" [(ngModel)]="notificationPreferences.inApp" />
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Notificaciones en la aplicación</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Idioma y Zona Horaria -->
+    <section class="settings-section">
+      <h2>Idioma y Zona Horaria</h2>
+      <p class="section-description">Ajusta tu idioma de interfaz y zona horaria.</p>
+      
+      <div class="form-group">
+        <label for="language">Idioma de la interfaz</label>
+        <select 
+          id="language"
+          [(ngModel)]="languageSettings.interfaceLanguage" 
+          class="form-select"
+        >
+          <option *ngFor="let lang of languageOptions" [value]="lang">
+            {{ lang }}
+          </option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="timezone">Zona horaria</label>
+        <select 
+          id="timezone"
+          [(ngModel)]="languageSettings.timezone" 
+          class="form-select"
+        >
+          <option *ngFor="let tz of timezoneOptions" [value]="tz">
+            {{ tz }}
+          </option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Botón Restablecer -->
+    <div class="reset-section">
+      <button type="button" class="btn-reset" (click)="resetDefaults()">
+        Restablecer a valores predeterminados
+      </button>
+    </div>
+
+    <!-- Previsualización del Perfil -->
+    <section class="settings-section preview-section">
+      <h2>Previsualización del Perfil</h2>
+      <p class="section-description">Así te verán los demás.</p>
+      
+      <div class="preview-card">
+        <div class="preview-avatar">
+          <div *ngIf="!profileImage" class="preview-photo-placeholder">
+            <span class="preview-icon">👤</span>
+          </div>
+          <img *ngIf="profileImage" [src]="profileImage" alt="Avatar" class="preview-photo">
+          <span class="status-indicator" [class]="selectedStatus.toLowerCase()"></span>
+        </div>
+        
+        <div class="preview-info">
+          <h3 class="preview-username">{{ username }}</h3>
+          <span class="preview-status">{{ selectedStatus }}</span>
+          <p class="preview-description">
+            Tu perfil se verá así para otras usuarias. Los cambios se aplicarán al guardar.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Botón Guardar Cambios -->
+    <div class="actions-section">
+      <button type="button" class="btn-save" (click)="saveChanges()">
+        Guardar Cambios
+      </button>
+    </div>
+  </div>
+</div>
