@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-/* src/app/dashboard/dashboard.scss */
-=======
->>>>>>> 03b419441a7f2e1b336a8c6dd5f791b148bdb771
 :host {
   display: block;
   height: 100vh;
@@ -252,13 +248,13 @@
 }
 
 /* WORKSPACE (DERECHA) */
-
 .workspace {
   flex: 1;
   background: radial-gradient(circle at top left, #111827, #020617);
-  padding: 14px 18px;
+  padding: 0; /* ⬅️ CAMBIO: sin padding para que el componente hijo maneje su propio padding */
   position: relative;
-  overflow: hidden;
+  overflow-y: auto; /* ⬅️ CAMBIO: permite scroll vertical */
+  overflow-x: hidden;
 }
 
 /* Mensaje de bienvenida / vacío */

@@ -1,1 +1,95 @@
-<p>userprofile works!</p>
+<div class="profile-container">
+  <h1 class="profile-main-title">Perfil del Usuario</h1>
+
+  <!-- INFORMACIÓN PERSONAL -->
+  <section class="profile-section">
+    <div class="section-header">
+      <h2>Información Personal</h2>
+      <button class="edit-btn" (click)="onEditContact()">Editar Perfil</button>
+    </div>
+
+    <div class="profile-card">
+      <div class="profile-avatar-section">
+        <div class="avatar-wrapper">
+          <img 
+            src="https://i.pravatar.cc/150?img=47" 
+            alt="Avatar de usuario"
+            class="profile-avatar"
+          />
+          <span class="status-indicator active"></span>
+        </div>
+
+        <div class="profile-info">
+          <h3 class="profile-name">{{ user.name }}</h3>
+          <span class="status-badge">
+            <span class="status-icon">✓</span>
+            Activo
+          </span>
+        </div>
+      </div>
+
+      <div class="bio-section">
+        <h4 class="bio-label">Biografía</h4>
+        <p class="bio-text">{{ user.bio }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INFORMACIÓN DE CONTACTO -->
+  <section class="profile-section">
+    <div class="section-header">
+      <h2>Información de Contacto</h2>
+      <button class="edit-btn" (click)="onEditContact()">Editar Contacto</button>
+    </div>
+
+    <div class="profile-card">
+      <div class="contact-item">
+        <span class="contact-icon">📧</span>
+        <div class="contact-details">
+          <p class="contact-label">Correo Electrónico</p>
+          <p class="contact-value">{{ user.email }}</p>
+        </div>
+      </div>
+
+      <div class="contact-item">
+        <span class="contact-icon">📱</span>
+        <div class="contact-details">
+          <p class="contact-label">Teléfono</p>
+          <p class="contact-value">{{ user.phone }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREFERENCIAS -->
+  <section class="profile-section">
+    <div class="section-header">
+      <h2>Preferencias</h2>
+      <button class="edit-btn" (click)="onEditPreferences()">Editar Preferencias</button>
+    </div>
+
+    <div class="profile-card">
+      <div class="preference-item">
+        <span class="preference-icon">🔔</span>
+        <div class="preference-details">
+          <p class="preference-label">Notificaciones</p>
+          <p class="preference-value">{{ user.notifications ? 'Activadas' : 'Desactivadas' }}</p>
+        </div>
+      </div>
+
+      <div class="preference-item">
+        <span class="preference-icon">🎨</span>
+        <div class="preference-details">
+          <p class="preference-label">Tema de la Aplicación</p>
+          <p class="preference-value">{{ user.theme }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOTONES DE ACCIÓN -->
+  <div class="action-buttons">
+    <button class="btn-cancel" (click)="onCancel()">Cancelar</button>
+    <button class="btn-primary" (click)="onBackToChat()">Volver a Chat</button>
+  </div>
+</div>

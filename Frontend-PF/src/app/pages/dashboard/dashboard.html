@@ -37,16 +37,6 @@
     </div>
   </header>
 
-<<<<<<< HEAD
-  <div class="main-content">
-    <!-- Menu lateral -->
-    <aside class="sidebar-menu">
-      <div class="menu-sections">
-        <div *ngFor="let section of menuSections" 
-             class="menu-section"
-             [class.active]="activeSection === section.title"
-             (click)="navigateToSection(section)">
-=======
   <!-- CONTENIDO PRINCIPAL: SIDEBAR + WORKSPACE -->
   <div class="dashboard-main">
     <!-- SIDEBAR -->
@@ -60,9 +50,9 @@
           *ngFor="let section of menuSections"
           class="menu-section"
           type="button"
+          [class.active]="activeSection === section.title"
           (click)="navigateToSection(section)"
         >
->>>>>>> 03b419441a7f2e1b336a8c6dd5f791b148bdb771
           <span class="menu-icon">{{ section.icon }}</span>
           <span class="menu-title">{{ section.title }}</span>
         </button>
@@ -74,64 +64,24 @@
       </div>
     </aside>
 
-<<<<<<< HEAD
-    <!-- Panel de contenido cambia según activeSection -->
-    <main class="content-pane">
-      <!-- Sección de Configuración: Muestra el componente UserSettings -->
-      <ng-container *ngIf="activeSection === 'Configuración'">
-        <app-user-settings></app-user-settings>
-      </ng-container>
-
-      <!-- Otras secciones -->
-      <ng-container *ngIf="activeSection === 'Conversaciones'">
-        <div class="welcome-section">
-          <h2>Conversaciones</h2>
-          <p>Aquí va el contenido de las conversaciones...</p>
-        </div>
-      </ng-container>
-
-      <ng-container *ngIf="activeSection === 'Canales'">
-        <div class="welcome-section">
-          <h2>Canales</h2>
-          <p>Aquí va el contenido de los canales...</p>
-        </div>
-      </ng-container>
-
-      <ng-container *ngIf="activeSection === 'Perfil'">
-        <div class="welcome-section">
-          <h2>Perfil</h2>
-          <p>Aquí va el contenido del perfil...</p>
-        </div>
-      </ng-container>
-
-      <ng-container *ngIf="activeSection === ''">
-        <div class="welcome-section">
-          <h2>¡Bienvenido a nuestra aplicación!</h2>
-          <p>Gracias por ingresar. Estamos encantados de tenerte aquí.</p>
-          <p>Explora las diferentes secciones del menú lateral para comenzar a usar todas las funcionalidades de nuestra plataforma.</p>
-        </div>
-      </ng-container>
-    </main>
-=======
-    <!-- WORKSPACE (AQUÍ VAN LAS RUTAS HIJAS: chat-thread, etc.) -->
+    <!-- WORKSPACE (AQUÍ VAN LAS RUTAS HIJAS) -->
     <main class="workspace">
       <router-outlet
         (activate)="onChildActivate()"
         (deactivate)="onChildDeactivate()"
       ></router-outlet>
 
-    <!-- MOSTRAR SOLO SI NO HAY COMPONENTE HIJO ACTIVO -->
-    <div class="workspace-empty" *ngIf="!hasChildActive">
-      <h2>Bienvenido a YARG Flow 👋</h2>
-      <p class="empty-text">
-        Selecciona una conversación en el menú lateral o inicia un nuevo chat.
-      </p>
-      <p class="empty-hint">
-        Usa la barra de búsqueda de arriba para encontrar canales y contactos.
-      </p>
-    </div>
-  </main>
->>>>>>> 03b419441a7f2e1b336a8c6dd5f791b148bdb771
+      <!-- MOSTRAR SOLO SI NO HAY COMPONENTE HIJO ACTIVO -->
+      <div class="workspace-empty" *ngIf="!hasChildActive">
+        <h2>Bienvenido a YARG Flow 👋</h2>
+        <p class="empty-text">
+          Selecciona una conversación en el menú lateral o inicia un nuevo chat.
+        </p>
+        <p class="empty-hint">
+          Usa la barra de búsqueda de arriba para encontrar canales y contactos.
+        </p>
+      </div>
+    </main>
   </div>
 
   <!-- FOOTER -->
