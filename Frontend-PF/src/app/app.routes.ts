@@ -27,8 +27,6 @@ export const routes: Routes = [
           .then(m => m.ChatThread)
     },
 
-    // por defecto, que abra la lista de conversaciones
-    { path: '', redirectTo: 'conversations', pathMatch: 'full' }
   ]
 },
 
