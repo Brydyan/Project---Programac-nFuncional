@@ -1,0 +1,93 @@
+<div class="chat-window">
+
+  <!-- HEADER CON INFO DEL CONTACTO -->
+  <header class="chat-header">
+    <div class="chat-header-left">
+      <div class="avatar">
+        <img
+          src="https://i.pravatar.cc/100?img=1"
+          alt="Avatar"
+        />
+      </div>
+      <div class="contact-info">
+        <div class="contact-name">Alice Smith</div>
+        <div class="contact-status">En línea</div>
+      </div>
+    </div>
+
+    <div class="chat-header-right">
+      <!-- Iconos de acción (solo visual, luego los conectas) -->
+      <button class="icon-btn" type="button">📞</button>
+      <button class="icon-btn" type="button">🎥</button>
+      <button class="icon-btn" type="button">⋯</button>
+    </div>
+  </header>
+
+  <!-- ZONA DE MENSAJES -->
+  <main class="chat-body">
+    <!-- Ejemplo de mensajes “del otro” -->
+    <div class="message-row message-row--left">
+      <div class="message-bubble message-bubble--left">
+        <p>¡Hola! ¿Cómo estás? Espero que hayas tenido un buen día.</p>
+        <span class="message-time">10:00 AM</span>
+      </div>
+    </div>
+
+    <div class="message-row message-row--left">
+      <div class="message-bubble message-bubble--left">
+        <p>
+          Me alegro de escuchar eso. Estoy trabajando en el informe del
+          proyecto, casi termina.
+        </p>
+        <span class="message-time">10:06 AM</span>
+      </div>
+    </div>
+
+    <!-- Ejemplo de mensajes “míos” -->
+    <div class="message-row message-row--right">
+      <div class="message-bubble message-bubble--right">
+        <p>
+          ¡Hola Alice! Estoy muy bien, gracias. Mi día fue productivo.
+          ¿Qué hay de nuevo?
+        </p>
+        <span class="message-time">10:02 AM</span>
+      </div>
+    </div>
+
+    <div class="message-row message-row--right">
+      <div class="message-bubble message-bubble--right">
+        <p>
+          ¡Genial! Si necesitas ayuda con algo, házmelo saber. Estaré
+          disponible un rato más.
+        </p>
+        <span class="message-time">10:07 AM</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- ESTADO “ESCRIBIENDO” -->
+  <div class="typing-indicator">
+    Contacto está escribiendo…
+  </div>
+
+  <!-- INPUT DE MENSAJE -->
+  <footer class="chat-input-area">
+    <div class="input-wrapper">
+      <button class="attach-btn" type="button">📎</button>
+      <input
+        type="text"
+        placeholder="Escribe tu mensaje aquí..."
+      />
+      <button class="send-btn" type="button">
+        ➤
+      </button>
+    </div>
+  </footer>
+
+  <!-- FOOTER OPCIONAL (ENLACES RÁPIDOS) -->
+  <div class="chat-footer-links">
+    <span>Enlaces Rápidos</span>
+    <span>·</span>
+    <span>Soporte</span>
+  </div>
+</div>

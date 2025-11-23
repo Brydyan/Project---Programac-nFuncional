@@ -1,0 +1,49 @@
+<!-- src/app/pages/dashboard/conversations/conversations.html -->
+
+<div class="conversations-wrapper">
+  <!-- Barra superior de la sección -->
+  <div class="conversations-header">
+    <div class="tabs">
+      <button class="tab active">Conversaciones</button>
+      <button class="tab">Canales</button>
+      <button class="tab">Settings</button>
+    </div>
+
+    <button class="new-conversation-btn" (click)="newConversation()">
+      + Nueva Conversación
+    </button>
+  </div>
+
+  <h2 class="conversations-title">Conversaciones</h2>
+
+  <!-- Lista de conversaciones -->
+  <div class="conversations-list">
+    <button
+      class="conversation-card"
+      *ngFor="let conv of conversations"
+      type="button"
+      (click)="openConversation(conv)"
+    >
+      <div class="conversation-avatar">
+        <img [src]="conv.avatarUrl" [alt]="conv.name" />
+      </div>
+
+      <div class="conversation-main">
+        <div class="conversation-header-line">
+          <span class="conversation-name">{{ conv.name }}</span>
+          <span class="conversation-time">{{ conv.lastTimeLabel }}</span>
+        </div>
+        <div class="conversation-message">
+          {{ conv.lastMessage }}
+        </div>
+      </div>
+    </button>
+  </div>
+
+  <!-- Footer inferior dentro del panel principal (opcional) -->
+  <div class="conversations-footer">
+    <span>Enlaces Rápidos</span>
+    <span>·</span>
+    <span>Soporte</span>
+  </div>
+</div>
