@@ -47,3 +47,54 @@
     <span>Soporte</span>
   </div>
 </div>
+<div class="new-conversation-layer" *ngIf="showNewConversation">
+  <div class="new-conversation-backdrop" (click)="closeNewConversation()"></div>
+
+  <div class="new-conversation-panel" (click)="$event.stopPropagation()">
+    <header class="new-conversation-header">
+      <div class="header-titles">
+        <h3>Iniciar nueva conversación</h3>
+        <p>Busca un usuario por nombre o @usuario para empezar a chatear.</p>
+      </div>
+      <button class="close-btn" type="button" (click)="closeNewConversation()">✕</button>
+    </header>
+
+    <div class="new-conversation-search">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Buscar por nombre o @usuario"
+        [(ngModel)]="searchTerm"
+        (input)="onSearchChange()"
+      />
+    </div>
+
+    <div class="new-conversation-results">
+      <p class="empty-hint" *ngIf="!searchTerm">
+        Escribe para buscar personas…
+      </p>
+
+      <p class="empty-hint" *ngIf="searchTerm && searchResults.length === 0">
+        No se encontraron usuarios para "{{ searchTerm }}".
+      </p>
+
+      <button
+        *ngFor="let user of searchResults"
+        type="button"
+        class="search-result-item"
+        (click)="startConversationWith(user)"
+      >
+        <div class="avatar">
+          <img
+            [src]="user.avatarUrl || ('https://i.pravatar.cc/100?u=' + user.id)"
+            [alt]="user.displayName"
+          />
+        </div>
+        <div class="user-main">
+          <span class="user-name">{{ user.displayName }}</span>
+          <span class="user-username">@{{ user.username }}</span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
