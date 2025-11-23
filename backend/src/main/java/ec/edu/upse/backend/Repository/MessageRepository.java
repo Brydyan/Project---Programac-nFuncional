@@ -10,4 +10,6 @@ public interface MessageRepository extends MongoRepository<MessageEntity, String
     List<MessageEntity> findBySenderId(String senderId);
     List<MessageEntity> findByReceiverId(String receiverId);
     List<MessageEntity> findByChannelId(String channelId);
+
+    MessageEntity findTopBySenderIdAndReceiverIdOrderByTimestampDesc(String senderId, String receiverId);
 }

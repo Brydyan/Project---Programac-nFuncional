@@ -38,15 +38,13 @@ export class Dashboard implements OnInit {
     }, 30000);
   }
 
-  // 👇 NUEVOS MÉTODOS
   onChildActivate() {
-    this.hasChildActive = true;
-  }
+  this.hasChildActive = true;
+}
 
-  onChildDeactivate() {
-    this.hasChildActive = false;
-  }
-
+onChildDeactivate() {
+  this.hasChildActive = false;
+}
 
  navigateToSection(section: any) {
   this.router.navigateByUrl(section.route);

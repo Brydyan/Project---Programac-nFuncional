@@ -65,22 +65,21 @@
 
     <!-- WORKSPACE (AQUÍ VAN LAS RUTAS HIJAS: chat-thread, etc.) -->
     <main class="workspace">
-      <router-outlet
-        (activate)="onChildActivate()"
-        (deactivate)="onChildDeactivate()"
-      ></router-outlet>
+  <router-outlet
+    (activate)="onChildActivate()"
+    (deactivate)="onChildDeactivate()"
+  ></router-outlet>
 
-    <!-- MOSTRAR SOLO SI NO HAY COMPONENTE HIJO ACTIVO -->
-    <div class="workspace-empty" *ngIf="!hasChildActive">
-      <h2>Bienvenido a YARG Flow 👋</h2>
-      <p class="empty-text">
-        Selecciona una conversación en el menú lateral o inicia un nuevo chat.
-      </p>
-      <p class="empty-hint">
-        Usa la barra de búsqueda de arriba para encontrar canales y contactos.
-      </p>
-    </div>
-  </main>
+  <div class="workspace-empty" *ngIf="!hasChildActive">
+    <h2>Bienvenido a YARG Flow 👋</h2>
+    <p class="empty-text">
+      Selecciona una conversación en el menú lateral o inicia un nuevo chat.
+    </p>
+    <p class="empty-hint">
+      Usa la barra de búsqueda de arriba para encontrar canales y contactos.
+    </p>
+  </div>
+</main>
   </div>
 
   <!-- FOOTER -->
