@@ -1,14 +1,12 @@
 import { Routes } from '@angular/router';
 import { AuthComponent } from './pages/auth/auth';
-<<<<<<< HEAD
-import { Dashboard } from './pages/dashboard/dashboard';
-=======
+
 
 
 export const routes: Routes = [
 
   { path: 'auth', component: AuthComponent },
->>>>>>> 03b419441a7f2e1b336a8c6dd5f791b148bdb771
+
 
 
   {
