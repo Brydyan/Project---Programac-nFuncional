@@ -5,7 +5,8 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class SessionService {
 
-  private api = 'http://localhost:8081/app/v1/sessions';
+  // Use page host so mobile devices hitting the PC's IP call backend on PC
+  private api = `${location.protocol}//${location.hostname}:8081/app/v1/sessions`;
 
   constructor(private http: HttpClient) {}
 
