@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ec.edu.upse.backend.Entity.UserEntity;
 import ec.edu.upse.backend.Service.UserService;
+import ec.edu.upse.backend.dto.UserSummaryDto;
 
 @RestController
 @RequestMapping("/app/v1/user")
@@ -61,4 +63,14 @@ public class UserController {
         boolean deleted = userService.deleteUser(id);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
+
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserSummaryDto>> searchUser(
+        @RequestParam("q") String query, 
+        @RequestParam(value = "excludeId", required = false) String excludeId){
+            List<UserSummaryDto> result = userService.searchUsers(query, excludeId);
+            return ResponseEntity.ok(result);
+        }
+    
 }

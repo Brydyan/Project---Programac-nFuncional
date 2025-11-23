@@ -3,13 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ConversationService, ConversationSummary } from '../../../Service/conversation.service';
+import { UserService, UserSearchResult } from '../../../Service/user.service';
 
-interface NewConversationUser {
-  id: string;
-  displayName: string;
-  username: string;
-  avatarUrl?: string;
-}
 
 @Component({
   selector: 'app-conversations',
@@ -28,11 +23,12 @@ export class Conversations implements OnInit {
   // UI "Nueva conversación"
   showNewConversation = false;
   searchTerm = '';
-  searchResults: NewConversationUser[] = [];
+  searchResults: UserSearchResult[] = [];
 
   constructor(
     private router: Router,
-    private convService: ConversationService
+    private convService: ConversationService,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
@@ -111,42 +107,33 @@ export class Conversations implements OnInit {
   }
 
   onSearchChange() {
-    const term = (this.searchTerm || '').trim().toLowerCase();
+
+    const term = (this.searchTerm || '').trim();
 
     if (!term) {
       this.searchResults = [];
       return;
     }
 
-    // TODO: aquí luego llamaremos al backend (UserService /search)
-    const mockUsers: NewConversationUser[] = [
-      {
-        id: 'user2',
-        displayName: 'Alice Torres',
-        username: 'alice',
-        avatarUrl: 'https://i.pravatar.cc/100?img=5'
-      },
-      {
-        id: 'user3',
-        displayName: 'Equipo de Desarrollo',
-        username: 'dev-team',
-        avatarUrl: 'https://i.pravatar.cc/100?img=12'
-      },
-      {
-        id: 'user4',
-        displayName: 'Soporte Técnico',
-        username: 'support',
-        avatarUrl: 'https://i.pravatar.cc/100?img=32'
-      }
-    ];
+    // opcional: mínimo 2 caracteres
+    if (term.length < 2) {
+      this.searchResults = [];
+      return;
+    }
 
-    this.searchResults = mockUsers.filter(u =>
-      u.displayName.toLowerCase().includes(term) ||
-      u.username.toLowerCase().includes(term)
-    );
+   this.userService.searchUsers(term, this.currentUserId).subscribe({
+      next: (users) => {
+        this.searchResults = users;
+      },
+      error: (err) => {
+        console.error('Error buscando usuarios', err);
+        this.searchResults = [];
+      }
+    });
+
   }
 
-  startConversationWith(user: NewConversationUser) {
+   startConversationWith(user: UserSearchResult) {
     // Más adelante aquí crearemos el Contact / Conversation en backend
     this.router.navigate(['/dashboard/chat', user.id]);
     this.showNewConversation = false;
