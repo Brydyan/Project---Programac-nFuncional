@@ -13,7 +13,6 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
 
-      # (Opcional pero recomendado) Variables para JWT:
       - JWT_SECRET=pon_aqui_una_clave_larga_y_unica
       - JWT_EXPIRATION_HOURS=24
     depends_on:

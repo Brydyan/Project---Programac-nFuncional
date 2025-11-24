@@ -16,10 +16,8 @@ export interface UserSearchResult {
 export class UserService {
 
   // En Docker/Nginx:
-  private baseUrl = '/app/v1/user';
+  private baseUrl = `${location.protocol}//${location.hostname}:8081/app/v1/user`;
 
-  // Si pruebas sin Docker, descomenta:
-  // private baseUrl = 'http://localhost:8081/app/v1/user';
 
   constructor(private http: HttpClient) {}
 
@@ -30,4 +28,9 @@ export class UserService {
     }
     return this.http.get<UserSearchResult[]>(`${this.baseUrl}/search`, { params });
   }
+
+  getUserById(id: string): Observable<UserSearchResult> {
+    return this.http.get<UserSearchResult>(`${this.baseUrl}/${id}`);
+  }
+
 }

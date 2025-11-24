@@ -317,4 +317,21 @@
   .workspace {
     padding: 10px 12px;
   }
+
+.topbar-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  color: #e5e7eb;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.topbar-user-alias {
+  color: #a5b4fc; // un lila clarito
+}
+
+
 }

@@ -29,10 +29,12 @@
     </div>
 
     <div class="topbar-right">
-      <div class="user-pill">
-        <span class="user-avatar">👤</span>
-        <span class="user-name">Usuario</span>
-      </div>
+      <button class="topbar-user-btn">
+        <span class="icon">👤</span>
+        <span class="topbar-user-alias">
+          {{ currentUserAlias || 'Usuario' }}
+        </span>
+      </button>
       <button class="logout-button" (click)="logout()">Salir</button>
     </div>
   </header>
@@ -50,12 +52,13 @@
           *ngFor="let section of menuSections"
           class="menu-section"
           type="button"
-          (click)="navigateToSection(section)"
+          [routerLink]="section.route"
         >
           <span class="menu-icon">{{ section.icon }}</span>
           <span class="menu-title">{{ section.title }}</span>
         </button>
       </nav>
+
 
       <div class="sidebar-footer">
         <span class="status-dot"></span>
