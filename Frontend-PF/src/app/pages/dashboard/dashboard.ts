@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../Service/session.service';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
-import { ToastService } from '../../Service/toast.service';   // ajusta la ruta si tu ToastService está en otra carpeta
+import { ToastService } from '../../Shared/toast.service';   // ajusta la ruta si tu ToastService está en otra carpeta
 import { UserService } from '../../Service/user.service';
 
 @Component({
