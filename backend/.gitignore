@@ -33,6 +33,6 @@ build/
 .vscode/
 
 ### Bases de datos###
-backend/mongo-data/
-backend/redis-data/
+mongo-data/
+redis-data/
 
