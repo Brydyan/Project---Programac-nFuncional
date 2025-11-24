@@ -8,6 +8,7 @@ import {
   ConversationService,
   ConversationSummary
 } from '../../../Service/conversation.service';
+import { HttpClient } from '@angular/common/http';
 import { UserService } from '../../../Service/user.service';
 import { SessionService } from '../../../Service/session.service';
 import { ConversationEventsService } from '../../../Service/conversation-events.service';
@@ -44,6 +45,7 @@ export class Conversations implements OnInit, OnDestroy {
     private sessionService: SessionService,
     private convEvents: ConversationEventsService,
     private realtimeService: RealtimeService,
+    private http: HttpClient,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -123,6 +125,12 @@ export class Conversations implements OnInit, OnDestroy {
         this.initialLoadDone = true;
         this.loading = false;
         this.cdr.detectChanges();
+
+        // Obtener estado realtime para cada conversación (optimizable)
+        this.conversations.forEach(conv => {
+          this.http.get(`/app/v1/presence/realtime/${conv.id}`, { responseType: 'text' })
+            .subscribe({ next: (status) => { conv.presenceStatus = status; this.cdr.detectChanges(); }, error: () => { conv.presenceStatus = 'OFFLINE'; } });
+        });
       },
       error: (err) => {
         console.error('[Conversations] error getByUser', err);
