@@ -32,4 +32,6 @@ build/
 ### VS Code ###
 .vscode/
 
-
+### Bases de datos###
+mongo-data/
+redis-data/
