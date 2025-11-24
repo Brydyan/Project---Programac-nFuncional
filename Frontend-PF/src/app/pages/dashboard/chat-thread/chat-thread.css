@@ -57,7 +57,19 @@
 
 .contact-status {
   font-size: 12px;
-  color: #4ade80;
+  color: #ffffff; /* default blanco */
+}
+
+.contact-status.online {
+  color: #4ade80; /* verde */
+}
+
+.contact-status.inactive {
+  color: #f59e0b; /* amarillo */
+}
+
+.contact-status.offline {
+  color: #ffffff; /* blanco */
 }
 
 .chat-header-right {

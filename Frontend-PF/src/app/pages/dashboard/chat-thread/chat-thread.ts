@@ -314,31 +314,27 @@ export class ChatThread implements OnInit, OnDestroy {
 
     // Intentar notificar logout para marcar como Fuera de linea
     try {
-      // En lugar de invalidar la sesión en close, marcamos la sesión como INACTIVE
-      // para que permanezca válida pero con presencia inactiva.
+      // Al cerrar la pestaña, invalidamos la sesión (logout) para que el estado sea OFFLINE
       const token = localStorage.getItem('token');
-      // sendBeacon no permite añadir cabeceras, así que mandamos el token en query string
-      let url = `/app/v1/sessions/inactive/${session.sessionId}`;
+      let url = `/app/v1/sessions/logout/${session.sessionId}`;
       if (token) {
         url += `?token=${encodeURIComponent(token)}`;
       }
 
       if (navigator && (navigator as any).sendBeacon) {
-        // sendBeacon suele enviar un Body; mandamos un pequeño payload también
         try {
           const payload = token ? JSON.stringify({ token }) : '';
           (navigator as any).sendBeacon(url, payload);
         } catch (e) {
-          // si falla sendBeacon, intentamos fallback sincronico
+          // fallback síncrono
           const xhr = new XMLHttpRequest();
-          xhr.open('POST', `/app/v1/sessions/inactive/${session.sessionId}`, false);
+          xhr.open('POST', `/app/v1/sessions/logout/${session.sessionId}`, false);
           if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
           try { xhr.send(null); } catch (e) { /* ignore */ }
         }
       } else {
-        // fallback sincrónico con header Authorization cuando sea posible
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `/app/v1/sessions/inactive/${session.sessionId}`, false);
+        xhr.open('POST', `/app/v1/sessions/logout/${session.sessionId}`, false);
         if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         try { xhr.send(null); } catch (e) { /* ignore */ }
       }
