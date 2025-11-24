@@ -11,7 +11,8 @@ interface AvailabilityResponse {
   providedIn: 'root'
 })
 export class UserAvailabilityService {
-  private readonly apiUrl = '/app/v1/user/available';
+  private readonly apiUrl = `${location.protocol}//${location.hostname}:8081/app/v1/user/available`;
+
   private cache: Map<string, { timestamp: number; available: boolean }> = new Map();
   private readonly cacheDuration = 300000; // 5 minutes in ms
 
