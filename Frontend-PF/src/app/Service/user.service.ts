@@ -16,7 +16,7 @@ export interface UserSearchResult {
 export class UserService {
 
   // En Docker/Nginx:
-  private baseUrl = `${location.protocol}//${location.hostname}:8081/app/v1/user`;
+  private baseUrl = '/app/v1/user';
 
 
   constructor(private http: HttpClient) {}
