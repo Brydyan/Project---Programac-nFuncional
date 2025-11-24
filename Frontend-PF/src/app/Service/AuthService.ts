@@ -24,7 +24,7 @@ export interface UserEntity {
 export class AuthService {
 
   // API base: use the current host so mobile devices accessing the app via PC IP work
-  private api = `${location.protocol}//${location.hostname}:8081/app/v1`;
+  private api = '/app/v1';
 
   constructor(private http: HttpClient) {}
 

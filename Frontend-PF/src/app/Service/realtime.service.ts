@@ -16,7 +16,7 @@ export class RealtimeService {
     console.log('[STOMP] Docker brokerURL =', brokerURL);
 
     this.client = new Client({
-      brokerURL,
+      brokerURL: `ws://${window.location.host}/ws`,
       reconnectDelay: 5000,
       debug: (str) => console.log('[STOMP]', str),
     });

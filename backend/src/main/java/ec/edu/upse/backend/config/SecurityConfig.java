@@ -62,13 +62,16 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // En modo Docker, el frontend entra por http://localhost
-        config.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost",
-            "http://127.0.0.1"
-        ));
+        // ===== MODO DEV / DOCKER =====
+        // Permitimos cualquier origen (LAN, localhost, etc.)
+        // OJO: usamos AllowedOriginPatterns, no AllowedOrigins,
+        // para que funcione bien con credenciales.
+        config.setAllowedOriginPatterns(Arrays.asList("*"));
 
+        // Métodos permitidos
         config.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","OPTIONS"));
+
+        // Cabeceras permitidas
         config.setAllowedHeaders(Arrays.asList(
             "Authorization",
             "Content-Type",
@@ -76,6 +79,8 @@ public class SecurityConfig {
             "Accept",
             "Origin"
         ));
+
+        // Para poder mandar cookies / Authorization
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
