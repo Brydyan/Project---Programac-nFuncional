@@ -49,6 +49,21 @@ public class SessionController {
     }
 
     // ============================
+    // MARCAR ONLINE / INACTIVE (invocado desde frontend)
+    // ============================
+    @PostMapping("/online/{sessionId}")
+    public ResponseEntity<Void> markOnline(@PathVariable String sessionId) {
+        service.markOnlineBySessionId(sessionId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/inactive/{sessionId}")
+    public ResponseEntity<Void> markInactive(@PathVariable String sessionId) {
+        service.markInactiveBySessionId(sessionId);
+        return ResponseEntity.ok().build();
+    }
+
+    // ============================
     // LOGOUT SOLO UNA SESIÓN
     // ============================
     @PostMapping("/logout/{sessionId}")

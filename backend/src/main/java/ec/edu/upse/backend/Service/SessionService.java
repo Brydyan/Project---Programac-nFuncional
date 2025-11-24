@@ -95,6 +95,27 @@ public class SessionService {
     }
 
     // ==================================================
+    // MARCAR SESIÓN COMO ACTIVA / INACTIVA (invocado por frontend)
+    // ==================================================
+    public void markOnlineBySessionId(String sessionId) {
+        repo.findBySessionId(sessionId).ifPresent(s -> {
+            s.setStatus("active");
+            s.setValid(true);
+            s.setLastActivity(Instant.now());
+            repo.save(s);
+            presence.setOnline(s.getUserId(), s.getSessionId());
+        });
+    }
+
+    public void markInactiveBySessionId(String sessionId) {
+        repo.findBySessionId(sessionId).ifPresent(s -> {
+            s.setStatus("inactive");
+            repo.save(s);
+            presence.setInactive(s.getUserId(), s.getSessionId());
+        });
+    }
+
+    // ==================================================
     // OBTENER SESIONES
     // ==================================================
     public List<SessionEntity> getAll() {

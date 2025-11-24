@@ -14,7 +14,7 @@
         <div class="contact-name">
           {{ contactDisplayName || 'Chat 1 a 1' }}
         </div>
-        <div class="contact-status">En línea</div>
+        <div class="contact-status" [ngClass]="{ 'online': contactPresence === 'ONLINE', 'inactive': contactPresence === 'INACTIVE' }">{{ contactStatusLabel }}</div>
       </div>
     </div>
 

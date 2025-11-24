@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ChangeDetectorRef } from '@angular/core';
 
 import { SessionService } from '../../../Service/session.service';
+import { HttpClient } from '@angular/common/http';
 import { ChatMessage, MessageService } from '../../../Service/Message.service';
 import { UserService } from '../../../Service/user.service';
 import { RealtimeService } from '../../../Service/realtime.service';
@@ -24,6 +25,7 @@ export class ChatThread implements OnInit, OnDestroy {
   private messageService = inject(MessageService);
   private userService = inject(UserService);
   private realtimeService = inject(RealtimeService);
+  private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
 
   contactId!: string;
@@ -33,11 +35,24 @@ export class ChatThread implements OnInit, OnDestroy {
   messages: ChatMessage[] = [];
   newMessage = '';
   loading = true;
+  // Presencia del contacto
+  contactPresence: string | null = null; // 'ONLINE' | 'INACTIVE' | 'OFFLINE' | null
+  get contactStatusLabel(): string {
+    if (this.contactPresence === 'ONLINE') return 'En línea';
+    if (this.contactPresence === 'INACTIVE') return 'Inactivo';
+    return 'Fuera de línea';
+  }
 
   
 
   private routeSub?: Subscription;
   private realtimeSub?: Subscription;
+  private presenceIntervalId: any = null;
+  // Presencia
+  private activityTimestamp = 0;
+  private inactivityTimer: any = null;
+  private activityListener = this.onUserActivity.bind(this);
+  private beforeUnloadListener = this.onBeforeUnload.bind(this);
 
   ngOnInit(): void {
     // Nos suscribimos a los cambios de /chat/:id
@@ -54,12 +69,25 @@ export class ChatThread implements OnInit, OnDestroy {
 
       this.loadContact();
       this.initChat();
+      // Registrar handlers globales de presencia (se añaden cuando el componente se crea)
+      document.addEventListener('click', this.activityListener);
+      document.addEventListener('keydown', this.activityListener);
+      document.addEventListener('mousemove', this.activityListener);
+      document.addEventListener('touchstart', this.activityListener);
+      window.addEventListener('beforeunload', this.beforeUnloadListener);
     });
   }
 
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.realtimeSub?.unsubscribe();
+    this.stopPresencePolling();
+    document.removeEventListener('click', this.activityListener);
+    document.removeEventListener('keydown', this.activityListener);
+    document.removeEventListener('mousemove', this.activityListener);
+    document.removeEventListener('touchstart', this.activityListener);
+    window.removeEventListener('beforeunload', this.beforeUnloadListener);
+    this.stopInactivityTimer();
   }
 
   // =======================
@@ -88,12 +116,27 @@ export class ChatThread implements OnInit, OnDestroy {
     if (!token) {
       this.loading = false;
       this.cdr.detectChanges();
+      // iniciar polling de presencia para el contacto
+      this.startPresencePolling();
       return;
     }
 
     this.sessionService.getByToken(token).subscribe({
       next: (session) => {
         this.currentUserId = session.userId;
+        const sessionId = session.sessionId;
+
+        // Marcar presencia online al entrar
+        this.sessionService.markOnline(sessionId).subscribe({
+          next: () => {
+            // iniciar watcher de inactividad
+            this.recordActivity();
+            this.startInactivityTimer(sessionId);
+            // start polling contact presence now that session is ready
+            this.startPresencePolling();
+          },
+          error: (err) => console.error('markOnline error', err)
+        });
 
         // 1) Cargar historial inicial
         this.loadMessages();
@@ -132,6 +175,176 @@ export class ChatThread implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  // =======================
+  // PRESENCE POLLING
+  // =======================
+  private startPresencePolling(): void {
+    this.stopPresencePolling();
+    // inmediatamente
+    this.fetchContactPresence();
+    // cada 15 segundos
+    this.presenceIntervalId = setInterval(() => this.fetchContactPresence(), 15000);
+  }
+
+  private stopPresencePolling(): void {
+    if (this.presenceIntervalId) {
+      clearInterval(this.presenceIntervalId);
+      this.presenceIntervalId = null;
+    }
+  }
+
+  private fetchContactPresence(): void {
+    if (!this.contactId) return;
+    // endpoint devuelve texto: ONLINE | INACTIVE | OFFLINE
+    (this.http.get(`/app/v1/presence/realtime/${this.contactId}`, { responseType: 'text' }) as any)
+      .subscribe({
+        next: (raw: string) => {
+          let status = 'OFFLINE';
+          if (!raw) {
+            status = 'OFFLINE';
+          } else {
+            const text = raw.trim();
+            // intentar parsear JSON si viene como objeto/array
+            if ((text.startsWith('{') || text.startsWith('['))) {
+              try {
+                const parsed = JSON.parse(text);
+                // si es array de sesiones, priorizar ONLINE > INACTIVE > OFFLINE
+                if (Array.isArray(parsed)) {
+                  const hasOnline = parsed.some((s: any) => (s.status || s) === 'ONLINE');
+                  const hasInactive = parsed.some((s: any) => (s.status || s) === 'INACTIVE');
+                  status = hasOnline ? 'ONLINE' : hasInactive ? 'INACTIVE' : 'OFFLINE';
+                } else if (parsed && typeof parsed === 'object') {
+                  status = parsed.status || parsed.presence || 'OFFLINE';
+                } else {
+                  status = String(parsed) as any || 'OFFLINE';
+                }
+              } catch (e) {
+                status = text as any;
+              }
+            } else {
+              status = text as any;
+            }
+          }
+
+          // normalizar
+          if (status !== 'ONLINE' && status !== 'INACTIVE') status = 'OFFLINE';
+          this.contactPresence = status;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.contactPresence = 'OFFLINE';
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  // =======================
+  // PRESENCE / ACTIVITY
+  // =======================
+  private onUserActivity(): void {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    const session = this.sessionService.currentSession;
+    if (!session || !session.sessionId) return;
+
+    // cada interacción marca al usuario como ONLINE y reinicia el timer
+    console.debug('[Presence] user activity detected, sessionId=', session.sessionId);
+    this.sessionService.markOnline(session.sessionId).subscribe({
+      next: () => {
+        console.debug('[Presence] markOnline success for', session.sessionId);
+        this.recordActivity();
+      },
+      error: (err) => console.error('markOnline onUserActivity', err)
+    });
+  }
+
+  private recordActivity(): void {
+    this.activityTimestamp = Date.now();
+    this.stopInactivityTimer();
+    // reiniciar timer
+    const session = this.sessionService.currentSession;
+    if (session && session.sessionId) this.startInactivityTimer(session.sessionId);
+  }
+
+  private startInactivityTimer(sessionId: string): void {
+    // tiempo = 5 minutos
+    this.stopInactivityTimer();
+    this.inactivityTimer = setTimeout(() => {
+      // no hubo actividad en 5 minutos -> marcar INACTIVE
+      console.debug('[Presence] inactivity timer fired for', sessionId);
+      this.sessionService.markInactive(sessionId).subscribe({
+        next: () => {
+          console.log('Sesión marcada como inactive por inactividad', sessionId);
+        },
+        error: (err) => console.error('markInactive error', err)
+      });
+    }, 5 * 60 * 1000);
+  }
+
+  // Debug helpers callable from browser console
+  // Ejemplo: document.querySelector('app-chat-thread')?.__ngContext__[8].component.markPresenceOnlineForDebug()
+  markPresenceOnlineForDebug(): void {
+    const session = this.sessionService.currentSession;
+    const sid = session?.sessionId;
+    if (!sid) return console.warn('[Presence debug] no sessionId');
+    console.debug('[Presence debug] forcing markOnline for', sid);
+    this.sessionService.markOnline(sid).subscribe({ next: () => console.log('markOnline debug ok') , error: (e) => console.error(e) });
+  }
+
+  markPresenceInactiveForDebug(): void {
+    const session = this.sessionService.currentSession;
+    const sid = session?.sessionId;
+    if (!sid) return console.warn('[Presence debug] no sessionId');
+    console.debug('[Presence debug] forcing markInactive for', sid);
+    this.sessionService.markInactive(sid).subscribe({ next: () => console.log('markInactive debug ok') , error: (e) => console.error(e) });
+  }
+
+  private stopInactivityTimer(): void {
+    if (this.inactivityTimer) {
+      clearTimeout(this.inactivityTimer);
+      this.inactivityTimer = null;
+    }
+  }
+
+  private onBeforeUnload(ev: BeforeUnloadEvent): void {
+    const session = this.sessionService.currentSession;
+    if (!session || !session.sessionId) return;
+
+    // Intentar notificar logout para marcar como Fuera de linea
+    try {
+      // En lugar de invalidar la sesión en close, marcamos la sesión como INACTIVE
+      // para que permanezca válida pero con presencia inactiva.
+      const token = localStorage.getItem('token');
+      // sendBeacon no permite añadir cabeceras, así que mandamos el token en query string
+      let url = `/app/v1/sessions/inactive/${session.sessionId}`;
+      if (token) {
+        url += `?token=${encodeURIComponent(token)}`;
+      }
+
+      if (navigator && (navigator as any).sendBeacon) {
+        // sendBeacon suele enviar un Body; mandamos un pequeño payload también
+        try {
+          const payload = token ? JSON.stringify({ token }) : '';
+          (navigator as any).sendBeacon(url, payload);
+        } catch (e) {
+          // si falla sendBeacon, intentamos fallback sincronico
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', `/app/v1/sessions/inactive/${session.sessionId}`, false);
+          if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+          try { xhr.send(null); } catch (e) { /* ignore */ }
+        }
+      } else {
+        // fallback sincrónico con header Authorization cuando sea posible
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/app/v1/sessions/inactive/${session.sessionId}`, false);
+        if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        try { xhr.send(null); } catch (e) { /* ignore */ }
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 
   private buildConversationId(a: string, b: string): string {

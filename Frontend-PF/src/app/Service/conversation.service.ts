@@ -12,6 +12,8 @@ export interface ConversationSummary {
 
   // propiedad calculada (no viene del backend)
   lastTimeLabel?: string;
+  // estado de presencia en tiempo real: 'ONLINE'|'INACTIVE'|'OFFLINE'
+  presenceStatus?: string;
 }
 
 @Injectable({

@@ -17,7 +17,8 @@ public class RealtimePresenceService {
     private final StringRedisTemplate redis;
 
     private static final String PREFIX = "presence:user:";
-    private static final Duration TTL = Duration.ofSeconds(60);
+    // TTL por defecto 5 minutos
+    private static final Duration TTL = Duration.ofMinutes(5);
 
     public void setOnline(String userId, String sessionId) {
         String key = PREFIX + userId + ":session:" + sessionId;
@@ -32,6 +33,11 @@ public class RealtimePresenceService {
     public void setOffline(String userId, String sessionId) {
         String key = PREFIX + userId + ":session:" + sessionId;
         redis.delete(key);
+    }
+
+    public void setInactive(String userId, String sessionId) {
+        String key = PREFIX + userId + ":session:" + sessionId;
+        redis.opsForValue().set(key, "INACTIVE", TTL);
     }
 
     public boolean isUserOnline(String userId) {

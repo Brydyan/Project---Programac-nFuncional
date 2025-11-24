@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ec.edu.upse.backend.Entity.PresenceEntity;
 import ec.edu.upse.backend.Service.PresenceService;
+import ec.edu.upse.backend.Service.RealtimePresenceService;
 
 @RestController
 @RequestMapping("/app/v1/presence")
@@ -22,6 +23,9 @@ public class PresenceController {
 
     @Autowired
     private PresenceService presenceService;
+
+    @Autowired
+    private RealtimePresenceService realtimePresence;
 
     // CREATE
     @PostMapping
@@ -45,6 +49,23 @@ public class PresenceController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<PresenceEntity>> getByUser(@PathVariable String userId) {
         return ResponseEntity.ok(presenceService.getByUser(userId));
+    }
+
+    // Obtiene estado "realtime" para mostrar en UI: ONLINE / INACTIVE / OFFLINE
+    @GetMapping("/realtime/{userId}")
+    public ResponseEntity<String> getRealtimeStatus(@PathVariable String userId) {
+        var sessions = realtimePresence.getUserSessionsStatus(userId);
+        if (sessions == null || sessions.isEmpty()) {
+            return ResponseEntity.ok("OFFLINE");
+        }
+
+        boolean anyOnline = sessions.values().stream().anyMatch(v -> "ONLINE".equalsIgnoreCase(v));
+        if (anyOnline) return ResponseEntity.ok("ONLINE");
+
+        boolean anyInactive = sessions.values().stream().anyMatch(v -> "INACTIVE".equalsIgnoreCase(v));
+        if (anyInactive) return ResponseEntity.ok("INACTIVE");
+
+        return ResponseEntity.ok("OFFLINE");
     }
 
     // UPDATE: cambiar estado ONLINE/OFFLINE/AWAY

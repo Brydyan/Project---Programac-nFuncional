@@ -50,6 +50,13 @@
         <!-- Línea superior: nombre + hora -->
         <div class="conversation-header-line">
           <span class="conversation-name">{{ conv.name }}</span>
+          <span class="conversation-status">
+            <small *ngIf="conv.presenceStatus">
+              <span *ngIf="conv.presenceStatus === 'ONLINE'">En línea</span>
+              <span *ngIf="conv.presenceStatus === 'INACTIVE'">Inactivo</span>
+              <span *ngIf="conv.presenceStatus === 'OFFLINE'">Fuera de línea</span>
+            </small>
+          </span>
           <span class="conversation-time">{{ conv.lastTimeLabel }}</span>
         </div>
 
