@@ -1,7 +1,7 @@
 <!-- src/app/pages/dashboard/conversations/conversations.html -->
 
 <div class="conversations-wrapper">
-  <!-- Barra superior de la sección -->
+  <!-- Barra superior -->
   <div class="conversations-header">
     <div class="tabs">
       <button class="tab active">Conversaciones</button>
@@ -16,34 +16,132 @@
 
   <h2 class="conversations-title">Conversaciones</h2>
 
-  <!-- Lista de conversaciones -->
-  <div class="conversations-list">
+  <!-- Estado: cargando -->
+  <div class="loading" *ngIf="loading">
+    Cargando conversaciones...
+  </div>
+
+  <!-- Estado: error -->
+  <div class="error" *ngIf="!loading && error">
+    {{ error }}
+  </div>
+
+  <!-- LISTA COMPLETA DE CONVERSACIONES -->
+  <div
+    class="conversations-list"
+    *ngIf="!loading && !error && conversations.length > 0"
+  >
     <button
       class="conversation-card"
       *ngFor="let conv of conversations"
       type="button"
       (click)="openConversation(conv)"
+      [class.active]="conv.id === selectedConversationId"
     >
+      <!-- Avatar con fallback -->
       <div class="conversation-avatar">
-        <img [src]="conv.avatarUrl" [alt]="conv.name" />
+        <img
+          [src]="conv.avatarUrl || ('https://i.pravatar.cc/100?u=' + conv.id)"
+          [alt]="conv.name"
+        />
       </div>
 
       <div class="conversation-main">
+        <!-- Línea superior: nombre + hora -->
         <div class="conversation-header-line">
           <span class="conversation-name">{{ conv.name }}</span>
           <span class="conversation-time">{{ conv.lastTimeLabel }}</span>
         </div>
-        <div class="conversation-message">
-          {{ conv.lastMessage }}
+
+        <!-- Línea inferior: último mensaje + badge no leídos -->
+        <div class="conversation-footer-line">
+          <span class="conversation-message">
+            {{ conv.lastMessage || 'Sin mensajes aún' }}
+          </span>
+
+          <span
+            *ngIf="conv.unreadCount > 0"
+            class="conversation-unread-badge"
+          >
+            {{ conv.unreadCount }}
+          </span>
         </div>
       </div>
     </button>
   </div>
 
-  <!-- Footer inferior dentro del panel principal (opcional) -->
+  <!-- Vacío -->
+  <div
+    class="empty-conversations"
+    *ngIf="!loading && !error && conversations.length === 0"
+  >
+    <h3>No tienes conversaciones todavía</h3>
+    <p>Inicia una nueva conversación con el botón de arriba.</p>
+  </div>
+
+  <!-- Footer -->
   <div class="conversations-footer">
     <span>Enlaces Rápidos</span>
     <span>·</span>
     <span>Soporte</span>
+  </div>
+</div>
+
+<!-- PANEL DE NUEVA CONVERSACIÓN -->
+<div class="new-conversation-layer" *ngIf="showNewConversation">
+  <div class="new-conversation-backdrop" (click)="closeNewConversation()"></div>
+
+  <div class="new-conversation-panel" (click)="$event.stopPropagation()">
+    <header class="new-conversation-header">
+      <div class="header-titles">
+        <h3>Iniciar nueva conversación</h3>
+        <p>Busca un usuario por nombre o @usuario para empezar a chatear.</p>
+      </div>
+
+      <button class="close-btn" type="button" (click)="closeNewConversation()">
+        ✕
+      </button>
+    </header>
+
+    <!-- Buscador -->
+    <div class="new-conversation-search">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Buscar por nombre o @usuario"
+        [(ngModel)]="searchTerm"
+        (input)="onSearchChange()"
+      />
+    </div>
+
+    <!-- Resultados -->
+    <div class="new-conversation-results">
+      <p class="empty-hint" *ngIf="!searchTerm">
+        Escribe para buscar personas…
+      </p>
+
+      <p class="empty-hint" *ngIf="searchTerm && searchResults.length === 0">
+        No se encontraron usuarios para "{{ searchTerm }}".
+      </p>
+
+      <button
+        *ngFor="let user of searchResults"
+        type="button"
+        class="search-result-item"
+        (click)="startConversationWith(user)"
+      >
+        <div class="avatar">
+          <img
+            [src]="user.avatarUrl || ('https://i.pravatar.cc/100?u=' + user.id)"
+            [alt]="user.displayName"
+          />
+        </div>
+
+        <div class="user-main">
+          <span class="user-name">{{ user.displayName }}</span>
+          <span class="user-username">@{{ user.username }}</span>
+        </div>
+      </button>
+    </div>
   </div>
 </div>

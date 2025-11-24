@@ -1,7 +1,9 @@
 package ec.edu.upse.backend.Service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Service;
 import ec.edu.upse.backend.Domain.UserValidator;
 import ec.edu.upse.backend.Entity.UserEntity;
 import ec.edu.upse.backend.Repository.UserRepository;
+import ec.edu.upse.backend.dto.UserSummaryDto;
 
 @Service
 public class UserService {
@@ -156,6 +159,29 @@ public class UserService {
         String normalized = UserValidator.normalizarEmail(email);
         if (normalized == null) return false;
         return userRepository.findByEmail(normalized).isEmpty();
+    }
+
+    public List<UserSummaryDto> searchUsers(String query, String excludeUserId) {
+        if (query == null || query.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String q = query.trim();
+
+        List<UserEntity> users = userRepository
+                .findByUsernameContainingIgnoreCaseOrDisplayNameContainingIgnoreCase(q, q);
+
+        return users.stream()
+                //para excluir al usuario actual de la busquedad
+                .filter(u -> excludeUserId == null || !u.getId().equals(excludeUserId))
+                .map(u -> new UserSummaryDto(
+                        u.getId(),
+                        u.getUsername(),
+                        u.getDisplayName(),
+                        u.getEmail(),
+                        null 
+                ))
+                .collect(Collectors.toList());
     }
 
 }
