@@ -25,7 +25,7 @@ export class Conversations implements OnInit, OnDestroy {
 
   conversations: ConversationSummary[] = [];
   loading = true;              // solo para la PRIMER carga
-  initialLoadDone = false;     // 👈 nuevo flag
+  initialLoadDone = false;     //  nuevo flag
   error: string | null = null;
   currentUserId: string | null = null;
 

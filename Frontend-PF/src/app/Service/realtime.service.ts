@@ -10,11 +10,16 @@ export class RealtimeService {
   private connected$ = new ReplaySubject<boolean>(1);
 
   constructor() {
+    // SOLO DOCKER: websocket siempre pasa por Nginx
+    const brokerURL = `ws://${window.location.host}/ws`;
+
+    console.log('[STOMP] Docker brokerURL =', brokerURL);
+
     this.client = new Client({
-    brokerURL: `ws://${window.location.host}/ws`,
-    reconnectDelay: 5000,
-    debug: (str) => console.log('[STOMP]', str),
-  });
+      brokerURL,
+      reconnectDelay: 5000,
+      debug: (str) => console.log('[STOMP]', str),
+    });
 
     this.client.onConnect = () => {
       console.log('[STOMP] conectado');
@@ -50,8 +55,7 @@ export class RealtimeService {
       )
     );
   }
-  
-/**  Inbox global del usuario (para la lista de conversaciones) */
+
   subscribeToInbox(userId: string): Observable<ChatMessage> {
     return this.waitUntilConnected().pipe(
       switchMap(
@@ -70,5 +74,4 @@ export class RealtimeService {
       )
     );
   }
-  
 }

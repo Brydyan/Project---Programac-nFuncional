@@ -13,6 +13,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import ec.edu.upse.backend.Service.SessionService;
 import ec.edu.upse.backend.Util.JwtUtil;
 
 @Configuration
@@ -20,17 +21,34 @@ import ec.edu.upse.backend.Util.JwtUtil;
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtUtil jwtUtil, ec.edu.upse.backend.Service.SessionService sessionService) throws Exception {
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtUtil, sessionService);
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtUtil jwtUtil,
+                                                           SessionService sessionService) {
+        return new JwtAuthenticationFilter(jwtUtil, sessionService);
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           JwtAuthenticationFilter jwtFilter) throws Exception {
 
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                // Permitir sin autenticación: login/registro
+                // ===== PÚBLICAS =====
                 .requestMatchers("/app/v1/auth/**").permitAll()
-                .requestMatchers("/app/v1/user/**").permitAll()
-                // Cualquier otra petición requiere autenticación
+                .requestMatchers("/app/v1/sessions/token/**").permitAll()
+                .requestMatchers("/app/v1/sessions/refresh/**").permitAll()
+                .requestMatchers("/app/v1/user/token/**").permitAll()
+
+                // WebSocket (handshake STOMP)
+                .requestMatchers("/ws/**").permitAll()
+
+                // ===== PRIVADAS =====
+                .requestMatchers("/app/v1/user/**").authenticated()
+                .requestMatchers("/app/v1/conversations/**").authenticated()
+                .requestMatchers("/app/v1/messages/**").authenticated()
+
+                // cualquier otra protegida
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -42,14 +60,26 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(false);
+        CorsConfiguration config = new CorsConfiguration();
+
+        // En modo Docker, el frontend entra por http://localhost
+        config.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost",
+            "http://127.0.0.1"
+        ));
+
+        config.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","OPTIONS"));
+        config.setAllowedHeaders(Arrays.asList(
+            "Authorization",
+            "Content-Type",
+            "X-Requested-With",
+            "Accept",
+            "Origin"
+        ));
+        config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 
