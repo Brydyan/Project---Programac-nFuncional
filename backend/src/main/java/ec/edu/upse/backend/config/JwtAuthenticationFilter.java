@@ -33,13 +33,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        // 1) Intentar leer token del header Authorization
         String header = request.getHeader("Authorization");
-        if (!StringUtils.hasText(header) || !header.startsWith("Bearer ")) {
+        String token = null;
+        if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
+            token = header.substring(7);
+        }
+
+        // 2) Si no viene en header (caso sendBeacon / beforeunload), revisar query param ?token=
+        if (!StringUtils.hasText(token)) {
+            String tokenParam = request.getParameter("token");
+            if (StringUtils.hasText(tokenParam)) {
+                token = tokenParam;
+            }
+        }
+
+        if (!StringUtils.hasText(token)) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        String token = header.substring(7);
 
         try {
             DecodedJWT decoded = jwtUtil.validateToken(token);
