@@ -40,6 +40,10 @@ public class SecurityConfig {
                 .requestMatchers("/app/v1/sessions/refresh/**").permitAll()
                 .requestMatchers("/app/v1/user/token/**").permitAll()
 
+
+                //endpoint para comprobar email disponible (PÚBLICO)
+                .requestMatchers("/app/v1/user/available/**").permitAll()
+
                 // WebSocket (handshake STOMP)
                 .requestMatchers("/ws/**").permitAll()
 
