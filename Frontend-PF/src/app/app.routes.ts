@@ -11,22 +11,25 @@ export const routes: Routes = [
   path: 'dashboard',
   loadComponent: () =>
     import('./pages/dashboard/dashboard').then(m => m.Dashboard),
-  children: [
-
+   children: [
+    {
+      path: '',
+      loadComponent: () =>
+        import('./pages/dashboard/welcome/welcome')
+          .then(m => m.DashboardWelcome)   
+    },
     {
       path: 'conversations',
       loadComponent: () =>
         import('./pages/dashboard/conversations/conversations')
           .then(m => m.Conversations)
     },
-
     {
-      path: 'chat/:contactId',
+      path: 'chat/:id',
       loadComponent: () =>
         import('./pages/dashboard/chat-thread/chat-thread')
           .then(m => m.ChatThread)
     },
-
   ]
 },
 

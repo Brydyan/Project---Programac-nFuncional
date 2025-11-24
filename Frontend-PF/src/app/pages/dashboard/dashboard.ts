@@ -1,23 +1,27 @@
-import { Component, OnInit } from '@angular/core';
+/* The Dashboard class in TypeScript represents a component for managing user interactions and
+navigation within an Angular application. */
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../Service/session.service';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { RouterOutlet } from '@angular/router';   
-
+import { ToastService } from '../../Shared/toast.service';
+import { UserService } from '../../Service/user.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet],
+  imports: [CommonModule, FormsModule, RouterOutlet, RouterLink],
   templateUrl: './dashboard.html',
   styleUrls: ['./dashboard.scss'],
 })
-
 export class Dashboard implements OnInit {
 
+  currentUserAlias: string | null = null;
+
   searchText = '';
-  hasChildActive = false;   // 👈 NUEVO
+  hasChildActive = false; 
   menuSections = [
     { title: 'Conversaciones', icon: '💬', route: '/dashboard/conversations' },
     { title: 'Canales',        icon: '📡', route: '/dashboard/channels' },
@@ -25,46 +29,86 @@ export class Dashboard implements OnInit {
     { title: 'Perfil',         icon: '👤', route: '/dashboard/profile' }
   ];
 
-  constructor(private sessionService: SessionService, private router: Router) {}
-
-  
-
-
-
+  constructor(
+    private sessionService: SessionService,
+    private router: Router,
+    private toast: ToastService,
+    private userService: UserService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit(): void {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      this.router.navigate(['/auth']);
+      return;
+    }
+
+    this.sessionService.getByToken(token).subscribe({
+      next: (session) => {
+        console.log('[Dashboard] sesión OK', session);
+        this.loadUserAliasAndStartRefresh(session);
+      },
+      error: () => {
+        localStorage.removeItem('token');
+        this.router.navigate(['/auth']);
+      }
+    });
+  }
+
+  /** Carga el alias del usuario y arranca el refresh periódico */
+  private loadUserAliasAndStartRefresh(session: any) {
+    const userId = session.userId;
+
+    // 1) Pedir datos del usuario y sacar alias/username
+    this.userService.getUserById(userId).subscribe({
+      next: (user) => {
+        console.log('[Dashboard] usuario OK', user);
+        this.currentUserAlias =
+          user.username || user.displayName || 'Usuario';
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('[Dashboard] error getUserById', err);
+        this.currentUserAlias = 'Usuario';
+        this.cdr.detectChanges();
+      }
+    });
+
+    // 2) Refrescar actividad cada 30 segundos
     setInterval(() => {
       this.sessionService.refreshActivity().subscribe();
     }, 30000);
   }
 
   onChildActivate() {
-  this.hasChildActive = true;
-}
+    this.hasChildActive = true;
+  }
 
-onChildDeactivate() {
-  this.hasChildActive = false;
-}
+  onChildDeactivate() {
+    this.hasChildActive = false;
+  }
 
- navigateToSection(section: any) {
-  this.router.navigateByUrl(section.route);
-}
   addFriend() { console.log('Añadir amigo'); }
   viewNotifications() { console.log('Ver notificaciones'); }
   getHelp() { console.log('Ayuda o soporte'); }
   onSearch() { console.log('Buscando:', this.searchText); }
+
+  navigateToSection(section: any) {
+    this.router.navigateByUrl(section.route);
+  }
+
   logout() {
     console.log('Cerrando sesión...');
 
     const token = localStorage.getItem('token');
     if (!token) {
-      // No token stored — just clear and redirect
       localStorage.removeItem('token');
       this.router.navigate(['/auth']);
       return;
     }
 
-    // Get session by token, then call logout by sessionId
     this.sessionService.getByToken(token).subscribe({
       next: (session: any) => {
         const sessionId = session?.sessionId || session?.id;
@@ -75,8 +119,8 @@ onChildDeactivate() {
               this.router.navigate(['/auth']);
             },
             error: () => {
-              // Even if server logout fails, clear client token
               localStorage.removeItem('token');
+              this.toast.show('Tu sesión expiró. Inicia sesión de nuevo.', 'info');
               this.router.navigate(['/auth']);
             }
           });
@@ -90,6 +134,5 @@ onChildDeactivate() {
         this.router.navigate(['/auth']);
       }
     });
-
   }
 }

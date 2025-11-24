@@ -1,28 +1,38 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
 
   private api = `${location.protocol}//${location.hostname}:8081/app/v1/sessions`;
 
+  //  aquí guardamos la sesión actual
+  private _session$ = new BehaviorSubject<any | null>(null);
+  public session$ = this._session$.asObservable();
+
   constructor(private http: HttpClient) {}
 
-  // Refresh activity by token
+  // acceso sincrónico al valor actual
+  get currentSession(): any | null {
+    return this._session$.value;
+  }
+
+  // Refrescar actividad por token (igual que antes)
   refreshActivity(): Observable<any> {
     const token = localStorage.getItem('token');
     if (!token) return new Observable();
-
     return this.http.post(`${this.api}/refresh/${token}`, {});
   }
 
-  // Get session info by token
+  //  Obtener sesión por token Y guardarla globalmente
   getByToken(token: string): Observable<any> {
-    return this.http.get(`${this.api}/token/${token}`);
+    return this.http.get(`${this.api}/token/${token}`).pipe(
+      tap(session => this._session$.next(session))
+    );
   }
 
-  // Logout a session by sessionId
+  // Logout por sessionId (igual que antes)
   logout(sessionId: string): Observable<any> {
     return this.http.post(`${this.api}/logout/${sessionId}`, {});
   }

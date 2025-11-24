@@ -5,6 +5,7 @@ import { RegisterComponent } from '../../Components/auth/register/register';
 import { ForgotPasswordComponent } from '../../Components/auth/forgotpassword/forgotpassword';
 import { AuthService } from '../../Service/AuthService';
 import { Router } from '@angular/router';
+import { ToastService } from '../../Shared/toast.service';
 
 @Component({
   selector: 'app-auth',
@@ -15,7 +16,7 @@ import { Router } from '@angular/router';
 })
 export class AuthComponent implements OnInit {
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(private auth: AuthService, private router: Router, private toast: ToastService) {}
 
   mode: 'login' | 'register' | 'forgot' = 'login';
 
@@ -31,7 +32,10 @@ export class AuthComponent implements OnInit {
           }
         },
         error: () => {
-          // invalid token or server error — stay in auth
+          // sesión expirada o inválida
+          localStorage.removeItem('token');
+          this.toast.show('Tu sesión expiró. Inicia sesión de nuevo.', 'info');
+          // te quedas en /auth
         }
       });
     }

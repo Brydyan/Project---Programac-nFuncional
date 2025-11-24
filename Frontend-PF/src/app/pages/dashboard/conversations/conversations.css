@@ -139,12 +139,20 @@
 .conversation-name {
   font-size: 14px;
   font-weight: 600;
+  color: #f9fafb;
+  text-shadow: 0 0 4px rgba(255,255,255,0.12);
 }
 
 .conversation-time {
   font-size: 11px;
   color: #9ca3af;
 }
+
+.conversation-card.active .conversation-name {
+  color: #ffffff;
+  font-weight: 700;
+}
+
 
 .conversation-message {
   font-size: 13px;
@@ -296,9 +304,49 @@
 .user-name {
   font-size: 13px;
   font-weight: 500;
+  color: #f9fafb;
 }
 
 .user-username {
   font-size: 11px;
+  color: #9ca3af; 
+}
+
+.empty-conversations {
+  margin-top: 2rem;
+  text-align: center;
   color: #9ca3af;
+}
+
+.empty-conversations h3 {
+  color: #e5e7eb;
+  font-size: 16px;
+  margin-bottom: 0.25rem;
+}
+.conversation-footer-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.conversation-message {
+  font-size: 0.85rem;
+  color: #9ca3af; /* gris claro */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* Badge tipo WhatsApp */
+.conversation-unread-badge {
+  background: #6366f1;
+  color: white;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 999px;
+  min-width: 20px;
+  text-align: center;
 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ec.edu.upse.backend.Entity.MessageEntity;
 import ec.edu.upse.backend.Service.MessageService;
+import ec.edu.upse.backend.dto.DirectMessageDto;
 
 @RestController
 @RequestMapping("/app/v1/messages")
@@ -69,5 +70,25 @@ public class MessageController {
     public ResponseEntity<Void> delete(@PathVariable String id) {
         boolean deleted = messageService.deleteMessage(id);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
+   @GetMapping("/direct/{userId}/{contactId}")
+    public ResponseEntity<List<MessageEntity>> getDirect(
+            @PathVariable String userId,
+            @PathVariable String contactId
+    ) {
+        List<MessageEntity> list = messageService.getDirectConversation(userId, contactId);
+        return ResponseEntity.ok(list);
+    }
+
+    // 👇 NUEVO: enviar mensaje directo
+    @PostMapping("/direct")
+    public ResponseEntity<MessageEntity> sendDirect(@RequestBody DirectMessageDto dto) {
+        MessageEntity saved = messageService.sendDirect(
+                dto.getSenderId(),
+                dto.getReceiverId(),
+                dto.getContent()
+        );
+        return ResponseEntity.ok(saved);
     }
 }
