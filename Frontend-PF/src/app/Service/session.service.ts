@@ -6,7 +6,7 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 export class SessionService {
 
 
-  private api = `${location.protocol}//${location.hostname}:8081/app/v1/sessions`;
+  private api = '/app/v1/sessions';
 
   //  aquí guardamos la sesión actual
   private _session$ = new BehaviorSubject<any | null>(null);
