@@ -33,6 +33,9 @@ class SessionServiceTest {
     @Mock
     private RealtimePresenceService presence;
 
+    @Mock
+    private ec.edu.upse.backend.Service.IpLocationService ipLocationService;
+
     @InjectMocks
     private SessionService sessionService;
 
@@ -40,6 +43,8 @@ class SessionServiceTest {
     void createSession_validData_savesAndReturnsSession() {
         when(sessionRepository.save(any(SessionEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+
+        when(ipLocationService.getLocation(anyString())).thenReturn("Quito, Pichincha, Ecuador");
 
         Instant expires = Instant.now().plus(Duration.ofDays(7));
         SessionEntity result = sessionService.createSession("user1", "token-123", "PC", "127.0.0.1", "Chrome", expires);
@@ -60,7 +65,7 @@ class SessionServiceTest {
         s.setUserId("user1");
         s.setLastActivity(Instant.now().minusSeconds(3600));
 
-        when(sessionRepository.findById("sid1")).thenReturn(Optional.of(s));
+        when(sessionRepository.findBySessionId("sid1")).thenReturn(Optional.of(s));
 
         sessionService.refreshActivity("sid1");
 
@@ -77,7 +82,7 @@ class SessionServiceTest {
         s.setValid(true);
         s.setStatus("active");
 
-        when(sessionRepository.findById("sid2")).thenReturn(Optional.of(s));
+        when(sessionRepository.findBySessionId("sid2")).thenReturn(Optional.of(s));
 
         sessionService.logout("sid2");
 
@@ -93,8 +98,6 @@ class SessionServiceTest {
 
         List<SessionEntity> sessions = Arrays.asList(s1, s2);
         when(sessionRepository.findByUserId(userId)).thenReturn(sessions);
-        when(sessionRepository.findById("1")).thenReturn(Optional.of(s1));
-        when(sessionRepository.findById("2")).thenReturn(Optional.of(s2));
 
         sessionService.logoutAll(userId);
 

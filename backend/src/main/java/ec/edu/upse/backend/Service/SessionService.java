@@ -18,6 +18,7 @@ public class SessionService {
 
     private final SessionRepository repo;
     private final RealtimePresenceService presence;
+    private final IpLocationService ipLocationService;
 
     // ==================================================
     // CREAR SESIÓN (Login)
@@ -42,6 +43,13 @@ public class SessionService {
         s.setToken(token);
         s.setDevice(device);
         s.setIpAddress(ip);
+        // Intentar resolver ubicación a partir de la IP (ipapi.co)
+        try {
+            String loc = ipLocationService.getLocation(ip);
+            s.setLocation(loc);
+        } catch (Exception e) {
+            s.setLocation(null);
+        }
         s.setBrowser(browser);
         s.setStatus("active");
         s.setValid(true);

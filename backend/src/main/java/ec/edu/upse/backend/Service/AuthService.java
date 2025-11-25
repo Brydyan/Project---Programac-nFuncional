@@ -36,9 +36,20 @@ public class AuthService {
         // Generar JWT
         String token = jwtUtil.generateToken(user.getId(), user.getUsername());
 
-        // Datos del request
-        String ip = request.getRemoteAddr();
-        String browser = request.getHeader("User-Agent");
+                // Datos del request: obtener IP real del cliente usando cabeceras proxy si están presentes
+                String ip = null;
+                String xff = request.getHeader("X-Forwarded-For");
+                if (xff != null && !xff.isBlank()) {
+                        // X-Forwarded-For puede contener múltiples IPs separadas por coma, la primera es el cliente
+                        ip = xff.split(",")[0].trim();
+                }
+                if (ip == null || ip.isBlank()) {
+                        String xri = request.getHeader("X-Real-IP");
+                        if (xri != null && !xri.isBlank()) ip = xri.trim();
+                }
+                if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
+
+                String browser = request.getHeader("User-Agent");
 
         // Crear sesión y activar presencia
         // Create a session without an expiration (persistent) — will be invalidated only on logout
@@ -51,6 +62,13 @@ public class AuthService {
                 null
         );
 
-        return new AuthResponse(token, user.getId(), user.getUsername());
+        // Devolver también la IP y la localización (para depuración y confirmación)
+        return new ec.edu.upse.backend.dto.AuthResponse(
+                token,
+                user.getId(),
+                user.getUsername(),
+                session.getIpAddress(),
+                session.getLocation()
+        );
     }
 }
