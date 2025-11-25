@@ -242,6 +242,12 @@
         </div>
 
         <div *ngIf="selectedSecurityTab === 'current'" class="security-table">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div></div>
+            <div>
+              <button class="btn-change-photo" type="button" (click)="logoutAllSessions()">Cerrar todas</button>
+            </div>
+          </div>
           <table>
             <thead>
               <tr>
@@ -249,21 +255,25 @@
                 <th>Navegador</th>
                 <th>Ubicación</th>
                 <th>IP</th>
+                <th>Acción</th>
                 <th>Estado</th>
                 <th>Último acceso</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngIf="sessionsLoading"><td colspan="6">Cargando sesiones...</td></tr>
+              <tr *ngIf="sessionsLoading"><td colspan="7">Cargando sesiones...</td></tr>
               <tr *ngFor="let s of sessionsCurrent">
                 <td>{{ s.device }}</td>
                 <td>{{ s.browser }}</td>
                 <td>{{ s.location }}</td>
                 <td>{{ s.ipAddress }}</td>
+                <td>
+                  <button class="btn-change-photo" type="button" (click)="logoutSession(s.sessionId || s.id)">Cerrar</button>
+                </td>
                 <td>{{ s.status }}</td>
                 <td>{{ s.lastActivity | date:'short' }}</td>
               </tr>
-              <tr *ngIf="!sessionsLoading && sessionsCurrent.length === 0"><td colspan="6">No hay sesiones activas.</td></tr>
+              <tr *ngIf="!sessionsLoading && sessionsCurrent.length === 0"><td colspan="7">No hay sesiones activas.</td></tr>
             </tbody>
           </table>
         </div>

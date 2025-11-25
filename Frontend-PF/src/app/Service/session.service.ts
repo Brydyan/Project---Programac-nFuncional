@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subscription, timer } from 'rxjs';
 import { tap, switchMap } from 'rxjs/operators';
+import { Router } from '@angular/router';
 
 @Injectable({ providedIn: 'root' })
 export class SessionService {
@@ -13,7 +14,10 @@ export class SessionService {
   private _session$ = new BehaviorSubject<any | null>(null);
   public session$ = this._session$.asObservable();
 
-  constructor(private http: HttpClient) {}
+  private sessionWatcherSub: Subscription | null = null;
+  private watchIntervalMs = 15000; // 15s - intervalo para verificar validez de sesión
+
+  constructor(private http: HttpClient, private router: Router) {}
 
   // acceso sincrónico al valor actual
   get currentSession(): any | null {
@@ -60,8 +64,12 @@ export class SessionService {
 
   //  Obtener sesión por token Y guardarla globalmente
   getByToken(token: string): Observable<any> {
-    return this.http.get(`${this.api}/token/${token}`).pipe(
-      tap(session => this._session$.next(session))
+    return this.http.get<any>(`${this.api}/token/${token}`).pipe(
+      tap(session => {
+        this._session$.next(session);
+        // iniciar el watcher cuando se obtiene una sesión válida
+        if (session && session.valid !== false) this.startSessionWatcher();
+      })
     );
   }
 
@@ -73,6 +81,87 @@ export class SessionService {
 
   // Logout por sessionId (igual que antes)
   logout(sessionId: string): Observable<any> {
-    return this.http.post(`${this.api}/logout/${sessionId}`, {});
+    return this.http.post(`${this.api}/logout/${sessionId}`, {}).pipe(
+      tap(() => {
+        const cur = this.currentSession;
+        const sid = cur?.sessionId || cur?.id;
+        if (sid && (sid === sessionId)) {
+          // Si cerramos la sesión actual, forzar salida local
+          this.handleInvalidSession();
+        }
+      })
+    );
+  }
+
+  // Logout todas las sesiones de un usuario
+  logoutAll(userId: string): Observable<any> {
+    if (!userId) return new Observable();
+    return this.http.post(`${this.api}/logout/user/${userId}`, {}).pipe(
+      tap(() => {
+        const cur = this.currentSession;
+        const uid = cur?.userId;
+        if (uid && uid === userId) {
+          this.handleInvalidSession();
+        }
+      })
+    );
+  }
+
+  // Iniciar un watcher periódico para validar que la sesión actual siga existiendo.
+  startSessionWatcher() {
+    // si ya existe, no duplicar
+    if (this.sessionWatcherSub) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // usar timer para ejecutar inmediatamente y luego cada intervalo
+    this.sessionWatcherSub = timer(0, this.watchIntervalMs).pipe(
+      switchMap(() => this.getByTokenSilent(token))
+    ).subscribe({
+      next: (s: any) => {
+        // si la respuesta viene vacía/undefined/null o la sesión está marcada como no válida, forzar logout local
+        if (!s || s.valid === false) {
+          this.handleInvalidSession();
+        } else {
+          // actualizar valor local si es necesario
+          this._session$.next(s);
+        }
+      },
+      error: (err) => {
+        // cualquier error al validar implica que la sesión ya no es válida
+        console.warn('Session watcher detected invalid session', err);
+        this.handleInvalidSession();
+      }
+    });
+  }
+
+  stopSessionWatcher() {
+    if (this.sessionWatcherSub) {
+      this.sessionWatcherSub.unsubscribe();
+      this.sessionWatcherSub = null;
+    }
+  }
+
+  // Versión silenciosa de getByToken que no reinicia el watcher ni manipula el state
+  private getByTokenSilent(token: string): Observable<any> {
+    return this.http.get<any>(`${this.api}/token/${token}`);
+  }
+
+  // Manejar la invalidación de la sesión: limpiar estado, detener watcher y redirigir al login
+  private handleInvalidSession() {
+    try {
+      localStorage.removeItem('token');
+    } catch (e) { console.warn('Could not clear token', e); }
+    this._session$.next(null);
+    this.stopSessionWatcher();
+    // navegar a la ruta de login (ajustar si la ruta es distinta)
+    try {
+      this.router.navigate(['/auth']);
+    } catch (e) {
+      console.warn('Router navigation to /auth failed', e);
+      // fallback simple
+      window.location.href = '/auth';
+    }
   }
 }
