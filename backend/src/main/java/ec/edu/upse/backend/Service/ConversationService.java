@@ -1,7 +1,11 @@
 package ec.edu.upse.backend.Service;
 
-import java.util.*;
-import java.util.stream.Collector;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +30,9 @@ public class ConversationService {
 
     @Autowired 
     private UserRepository userRepository;
+
+    @Autowired
+    private MessageService messageService;
 
     public List<ConversationSummaryDto> getConversationsForUser(String userId) {
         List<ContactEntity> asOwner = contactRepository.findByUserId(userId);
@@ -73,7 +80,10 @@ public class ConversationService {
 
         String avatarUrl = "";
 
-        int unreadCount = 0;
+        String convId = buildConversationId(userId, otherUserId);
+        long unread = 0L;
+        try { unread = messageService.getUnreadCountForConversation(convId, userId); } catch(Exception e) { unread = 0L; }
+        int unreadCount = (int) unread;
 
         ConversationSummaryDto dto = new ConversationSummaryDto(
                 otherUserId,
@@ -94,5 +104,9 @@ public class ConversationService {
         if (a == null) return b;
         if (b == null) return a;
         return a.getTimestamp().isAfter(b.getTimestamp()) ? a : b;
+    }
+
+    private String buildConversationId(String a, String b) {
+        return (a.compareTo(b) < 0) ? a + "_" + b : b + "_" + a;
     }
 }
