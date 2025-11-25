@@ -179,6 +179,34 @@ export class UserSettings {
       );
   }
 
+  // Cerrar una sesión específica
+  logoutSession(sessionId: string) {
+    if (!sessionId) return;
+    if (!confirm('¿Cerrar esta sesión?')) return;
+    this.sessionService.logout(sessionId).subscribe({
+      next: () => {
+        // recargar la lista desde el servidor para mantener consistencia
+        this.loadSessions();
+        alert('Sesión cerrada');
+      },
+      error: (e) => { console.error('Error cerrando sesión', e); alert('No se pudo cerrar la sesión'); }
+    });
+  }
+
+  // Cerrar todas las sesiones del usuario
+  logoutAllSessions() {
+    if (!this.userIdForSessions) return;
+    if (!confirm('¿Cerrar todas las sesiones de este usuario?')) return;
+    this.sessionService.logoutAll(this.userIdForSessions).subscribe({
+      next: () => {
+        // recargar para mostrar el estado actual (probablemente vacío)
+        this.loadSessions();
+        alert('Todas las sesiones han sido cerradas');
+      },
+      error: (e) => { console.error('Error cerrando todas las sesiones', e); alert('No fue posible cerrar todas las sesiones'); }
+    });
+  }
+
   saveChanges() {
     if (!this.username.trim()) {
       alert('El nombre de usuario es obligatorio.');
