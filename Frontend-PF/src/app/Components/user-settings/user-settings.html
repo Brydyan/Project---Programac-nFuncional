@@ -197,6 +197,89 @@
     </section>
 
     <!-- BOTÓN RESTABLECER -->
+    <!-- SEGURIDAD E INICIO DE SESIÓN -->
+    <section class="settings-section">
+      <div class="section-header">
+        <span class="section-icon">🔒</span>
+        <h2>Seguridad e inicio de sesión</h2>
+      </div>
+      <p class="section-description">Revisa dónde se ha iniciado sesión y gestiona sesiones activas. Se solicitará tu contraseña para acceder.</p>
+
+      <!-- Use the tabs inside the secured area; openSecurity triggers modal -->
+      <div class="form-group">
+        <button type="button" class="btn-change-photo" (click)="openSecurity('where')">Abrir Seguridad</button>
+      </div>
+
+      <div *ngIf="showSecurity" class="security-content">
+        <div class="security-tabs">
+          <button [class.active]="selectedSecurityTab === 'where'" (click)="selectedSecurityTab='where'">Dónde se ha iniciado sesión</button>
+          <button [class.active]="selectedSecurityTab === 'current'" (click)="selectedSecurityTab='current'">Sesiones actuales</button>
+        </div>
+
+        <div *ngIf="selectedSecurityTab === 'where'" class="security-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Dispositivo</th>
+                <th>Navegador</th>
+                <th>Ubicación</th>
+                <th>IP</th>
+                <th>Último acceso</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="sessionsLoading"><td colspan="5">Cargando sesiones...</td></tr>
+              <tr *ngFor="let s of sessionsAll">
+                <td>{{ s.device }}</td>
+                <td>{{ s.browser }}</td>
+                <td>{{ s.location }}</td>
+                <td>{{ s.ipAddress }}</td>
+                <td>{{ s.lastActivity | date:'short' }}</td>
+              </tr>
+              <tr *ngIf="!sessionsLoading && sessionsAll.length === 0"><td colspan="5">No hay sesiones registradas.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="selectedSecurityTab === 'current'" class="security-table">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div></div>
+            <div>
+              <button class="btn-change-photo" type="button" (click)="logoutAllSessions()">Cerrar todas</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Dispositivo</th>
+                <th>Navegador</th>
+                <th>Ubicación</th>
+                <th>IP</th>
+                <th>Acción</th>
+                <th>Estado</th>
+                <th>Último acceso</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="sessionsLoading"><td colspan="7">Cargando sesiones...</td></tr>
+              <tr *ngFor="let s of sessionsCurrent">
+                <td>{{ s.device }}</td>
+                <td>{{ s.browser }}</td>
+                <td>{{ s.location }}</td>
+                <td>{{ s.ipAddress }}</td>
+                <td>
+                  <button class="btn-change-photo" type="button" (click)="logoutSession(s.sessionId || s.id)">Cerrar</button>
+                </td>
+                <td>{{ s.status }}</td>
+                <td>{{ s.lastActivity | date:'short' }}</td>
+              </tr>
+              <tr *ngIf="!sessionsLoading && sessionsCurrent.length === 0"><td colspan="7">No hay sesiones activas.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <button type="button" class="btn-reset" (click)="resetDefaults()">
       Restablecer a valores predeterminados
     </button>
@@ -232,4 +315,24 @@
       </button>
     </div>
   </aside>
+</div>
+
+<!-- Modal confirmar contraseña -->
+<div class="modal-backdrop" *ngIf="showPasswordModal">
+  <form class="modal-card" (ngSubmit)="confirmPassword($event)" autocomplete="off">
+    <h3>Confirma tu contraseña</h3>
+    <p>Introduce tu contraseña para acceder a Seguridad e inicio de sesión.</p>
+    <input
+      type="password"
+      [(ngModel)]="passwordConfirm"
+      name="passwordConfirm"
+      class="form-input"
+      placeholder="Contraseña"
+      autocomplete="new-password"
+    />
+    <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end">
+      <button class="btn-change-photo" type="button" (click)="showPasswordModal=false">Cancelar</button>
+      <button class="btn-save" type="submit" [disabled]="isVerifyingPassword">Confirmar</button>
+    </div>
+  </form>
 </div>
