@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ec.edu.upse.backend.Entity.ChannelEntity;
@@ -53,4 +54,30 @@ public class ChannelController {
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/public")
+    public ResponseEntity<List<ChannelEntity>> searchPublicChannels(String search) {
+        return ResponseEntity.ok(channelService.searchPublic(search));
+    }
+
+    @PostMapping("/{id}/join/{userId}")
+    public ResponseEntity<ChannelEntity> joinChannel(
+            @PathVariable String id,
+            @PathVariable String userId
+    ) {
+        ChannelEntity updated = channelService.joinChannel(id, userId);
+        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("/public/search")
+    public ResponseEntity<List<ChannelEntity>> searchPublic(
+        @RequestParam String name) {
+        // El frontend espera que este endpoint devuelva solo canales públicos y no necesita el userId 
+        // si el filtrado por miembro ya se hace en getAllChannels. Dejamos este como estaba.
+        return ResponseEntity.ok(channelService.searchPublic(name));
+    }
+    @GetMapping("/member/{userId}")
+    public ResponseEntity<List<ChannelEntity>> getChannelsByMember(@PathVariable String userId) {
+        // Llama al nuevo servicio, pasando el userId para el filtrado
+        return ResponseEntity.ok(channelService.getChannelsByMemberId(userId)); 
+    }
 }

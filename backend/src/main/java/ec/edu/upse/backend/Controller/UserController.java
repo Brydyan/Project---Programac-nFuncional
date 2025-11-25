@@ -1,5 +1,6 @@
 package ec.edu.upse.backend.Controller;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,6 +72,12 @@ public class UserController {
         @RequestParam(value = "excludeId", required = false) String excludeId){
             List<UserSummaryDto> result = userService.searchUsers(query, excludeId);
             return ResponseEntity.ok(result);
-        }
+    }
     
+    @GetMapping("/by-ids")
+    public ResponseEntity<List<UserSummaryDto>> getUsersByIds(@RequestParam("ids") String idsCsv) {
+        List<String> ids = Arrays.asList(idsCsv.split(","));
+        List<UserSummaryDto> users = userService.getUsersByIds(ids);
+        return ResponseEntity.ok(users);
+    }
 }
