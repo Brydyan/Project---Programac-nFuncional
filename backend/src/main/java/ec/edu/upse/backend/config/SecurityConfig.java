@@ -22,8 +22,10 @@ import ec.edu.upse.backend.Util.JwtUtil;
 public class SecurityConfig {
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtUtil jwtUtil,
-                                                           SessionService sessionService) {
+    public JwtAuthenticationFilter jwtAuthenticationFilter(
+            JwtUtil jwtUtil,
+            SessionService sessionService
+    ) {
         return new JwtAuthenticationFilter(jwtUtil, sessionService);
     }
 
@@ -35,30 +37,37 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
-                // ===== PÚBLICAS =====
+                // ======================
+                // 🔓 RUTAS PUBLICAS
+                // ======================
                 .requestMatchers("/app/v1/auth/**").permitAll()
+                .requestMatchers("/app/v1/user/available/**").permitAll()
                 .requestMatchers("/app/v1/sessions/token/**").permitAll()
                 .requestMatchers("/app/v1/sessions/refresh/**").permitAll()
                 .requestMatchers("/app/v1/user/token/**").permitAll()
-
-
-                //endpoint para comprobar email disponible (PÚBLICO)
-                .requestMatchers("/app/v1/user/available/**").permitAll()
-
-                // WebSocket (handshake STOMP)
+                .requestMatchers(HttpMethod.POST, "/app/v1/user").permitAll()
+                .requestMatchers(HttpMethod.POST, "/app/v1/sessions/online/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/app/v1/sessions/offline/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
 
-                .requestMatchers(HttpMethod.POST, "/app/v1/user").permitAll()
+                // AÑADE ESTO:
+                .requestMatchers(HttpMethod.POST, "/app/v1/sessions/online/**").permitAll()
 
-                // ===== PRIVADAS =====
+
+                // ======================
+                // 🔐 RUTAS PRIVADAS
+                // ======================
                 .requestMatchers("/app/v1/user/**").authenticated()
                 .requestMatchers("/app/v1/conversations/**").authenticated()
                 .requestMatchers("/app/v1/messages/**").authenticated()
 
-                // cualquier otra protegida
                 .anyRequest().authenticated()
             )
+
+            // Insertamos el filtro JWT
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
+            // Desactivamos login form y basic auth
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable());
 
@@ -69,25 +78,16 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // ===== MODO DEV / DOCKER =====
-        // Permitimos cualquier origen (LAN, localhost, etc.)
-        // OJO: usamos AllowedOriginPatterns, no AllowedOrigins,
-        // para que funcione bien con credenciales.
         config.setAllowedOriginPatterns(Arrays.asList("*"));
-
-        // Métodos permitidos
         config.setAllowedMethods(Arrays.asList("GET","POST","PUT","DELETE","OPTIONS"));
-
-        // Cabeceras permitidas
         config.setAllowedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Type",
-            "X-Requested-With",
-            "Accept",
-            "Origin"
+                "Authorization",
+                "Content-Type",
+                "X-Requested-With",
+                "Accept",
+                "Origin"
         ));
 
-        // Para poder mandar cookies / Authorization
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
