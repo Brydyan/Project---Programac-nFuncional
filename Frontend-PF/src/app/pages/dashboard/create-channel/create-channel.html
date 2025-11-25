@@ -1,0 +1,48 @@
+<div class="modal-overlay" (click)="close()"></div>
+
+<div class="modal-box">
+
+  <div class="modal-header">
+    <h2>Crear Nuevo Canal</h2>
+    <span class="close-btn" (click)="close()">✕</span>
+  </div>
+
+  <p class="modal-subtitle">Ingrese los detalles para su nuevo canal.</p>
+
+  <!-- FORM -->
+  <div class="section-title">Detalles del Canal</div>
+
+  <label>Nombre del Canal</label>
+  <input
+    type="text"
+    placeholder="Ej: Equipo de Soporte"
+    [(ngModel)]="name"
+  />
+
+  <div class="section-title">Privacidad</div>
+
+  <!-- PUBLIC -->
+  <div class="privacy-card" (click)="type = 'PUBLIC'" [class.active]="type === 'PUBLIC'">
+    <div class="radio-circle" [class.selected]="type === 'PUBLIC'"></div>
+    <div>
+      <h4>Público</h4>
+      <p>Visible para todos los miembros del espacio.</p>
+    </div>
+  </div>
+
+  <!-- PRIVATE -->
+  <div class="privacy-card" (click)="type = 'PRIVATE'" [class.active]="type === 'PRIVATE'">
+    <div class="radio-circle" [class.selected]="type === 'PRIVATE'"></div>
+    <div>
+      <h4>Privado</h4>
+      <p>Solo miembros invitados pueden acceder.</p>
+    </div>
+  </div>
+
+  <!-- BOTONES -->
+  <div class="modal-actions">
+    <button class="cancel-btn" (click)="close()">Cancelar</button>
+    <button class="create-btn" (click)="createChannel()">Crear Canal</button>
+  </div>
+
+</div>

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 export interface UserSearchResult {
   id: string;
@@ -33,4 +33,12 @@ export class UserService {
     return this.http.get<UserSearchResult>(`${this.baseUrl}/${id}`);
   }
 
+  getUsersByIds(ids: string[]): Observable<UserSearchResult[]> {
+    if (ids.length === 0) {
+      return of([]); // evita llamada HTTP innecesaria
+    }
+    const idsParam = ids.join(',');
+    const params = new HttpParams().set('ids', idsParam);
+    return this.http.get<UserSearchResult[]>(`${this.baseUrl}/by-ids`, { params });
+  }
 }

@@ -30,6 +30,28 @@ export const routes: Routes = [
         import('./pages/dashboard/chat-thread/chat-thread')
           .then(m => m.ChatThread)
     },
+      
+    // Si luego activas canales:
+      {
+        path: 'channels',
+        loadComponent: () =>
+          import('./pages/dashboard/channels/channels')
+            .then(m => m.Channels)
+      },
+
+      {
+        path: 'channel/create',
+        loadComponent: () =>
+          import('./pages/dashboard/create-channel/create-channel')
+            .then(m => m.CreateChannel)
+      },
+      
+      {
+        path: 'channel/:id', // esta ruta carga ChannelThread
+        loadComponent: () =>
+          import('./pages/dashboard/channels-thread/channels-thread')
+            .then(m => m.ChannelsThread)
+      }
   ]
 },
 

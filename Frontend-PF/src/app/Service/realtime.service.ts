@@ -71,4 +71,22 @@ export class RealtimeService {
     );
   }
   
+  subscribeToChannelEvents(userId: string): Observable<any> {
+    return this.waitUntilConnected().pipe(
+      switchMap(
+        () =>
+          new Observable<any>((observer) => {
+            const sub = this.client.subscribe(
+              `/topic/channels.${userId}`,
+              (msg: IMessage) => {
+                console.log('[WS] evento canal recibido:', msg.body);
+                observer.next(JSON.parse(msg.body));
+              }
+            );
+
+            return () => sub.unsubscribe();
+          })
+      )
+    );
+  }
 }

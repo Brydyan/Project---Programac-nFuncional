@@ -36,4 +36,15 @@ export class SessionService {
   logout(sessionId: string): Observable<any> {
     return this.http.post(`${this.api}/logout/${sessionId}`, {});
   }
+
+  // Marcar online/inactive por sessionId
+  markOnline(sessionId: string): Observable<any> {
+    if (!sessionId) return new Observable();
+    return this.http.post(`${this.api}/online/${sessionId}`, {});
+  }
+
+  markInactive(sessionId: string): Observable<any> {
+    if (!sessionId) return new Observable();
+    return this.http.post(`${this.api}/inactive/${sessionId}`, {});
+  }
 }
