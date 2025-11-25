@@ -4,6 +4,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../Service/session.service';
+import { MessageService } from '../../Service/Message.service';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ToastService } from '../../Shared/toast.service';   // ajusta la ruta si tu ToastService está en otra carpeta
 import { UserService } from '../../Service/user.service';
@@ -37,6 +38,7 @@ export class Dashboard implements OnInit, OnDestroy {
     private toast: ToastService,
     private userService: UserService,
     private cdr: ChangeDetectorRef,
+    private messageService: MessageService,
   ) {}
 
   ngOnInit(): void {
@@ -51,6 +53,10 @@ export class Dashboard implements OnInit, OnDestroy {
       next: (session) => {
         console.log('[Dashboard] sesión OK', session);
         this.loadUserAliasAndStartRefresh(session);
+        try {
+          // obtener cantidad de conversaciones con pendientes y exponerlo en consola por ahora
+          this.messageService.getPendingConversationsCount(session.userId).subscribe({ next: (n) => { console.log('[Dashboard] pending convs', n); }, error: () => {} });
+        } catch (e) { }
       },
       error: () => {
         localStorage.removeItem('token');

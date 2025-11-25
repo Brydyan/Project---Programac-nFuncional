@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class SessionService {
+
+    private static final Logger log = LoggerFactory.getLogger(SessionService.class);
 
     private final SessionRepository repo;
     private final RealtimePresenceService presence;
@@ -71,9 +75,15 @@ public class SessionService {
     // REFRESCAR ACTIVIDAD (cada request válida)
     // ==================================================
     public void refreshActivity(String sessionId) {
-        repo.findBySessionId(sessionId).ifPresent(s -> {
+        if (sessionId == null) {
+            log.warn("refreshActivity called with null sessionId");
+            return;
+        }
+        log.debug("refreshActivity called for sessionId={}", sessionId);
+        repo.findBySessionId(sessionId).ifPresentOrElse(s -> {
             // Si tiene fecha de expiración y ya expiró → invalidar automáticamente
             if (s.getExpiresAt() != null && s.getExpiresAt().isBefore(Instant.now())) {
+                log.info("refreshActivity: session expired -> invalidating sessionId={} userId={}", s.getSessionId(), s.getUserId());
                 invalidateSession(s);
                 return;
             }
@@ -83,14 +93,27 @@ public class SessionService {
 
             // Mantener presencia en Redis
             presence.refresh(s.getUserId(), s.getSessionId());
+            log.debug("refreshActivity: refreshed sessionId={} userId={}", s.getSessionId(), s.getUserId());
+        }, () -> {
+            log.debug("refreshActivity: no session found for sessionId={}", sessionId);
         });
     }
 
     // ==================================================
     // LOGOUT (solo una sesión)
     // ==================================================
-    public void logout(String sessionId) {
-        repo.findBySessionId(sessionId).ifPresent(this::invalidateSession);
+    public void logout(String sessionIdOrId) {
+        // Intentamos por sessionId (valor público) y si no existe, por _id interno
+        repo.findBySessionId(sessionIdOrId).ifPresentOrElse(s -> {
+            log.info("logout: invalidating by sessionId={}, userId={}", s.getSessionId(), s.getUserId());
+            invalidateSession(s);
+        }, () -> {
+            // intentar buscar por id interno (por si el cliente envía el campo equivocado)
+            repo.findById(sessionIdOrId).ifPresent(s2 -> {
+                log.info("logout: invalidating by internal id={}, resolved sessionId={}, userId={}", sessionIdOrId, s2.getSessionId(), s2.getUserId());
+                invalidateSession(s2);
+            });
+        });
     }
 
     // ==================================================
@@ -169,10 +192,17 @@ public class SessionService {
     // MÉTODO INTERNO: invalidar sesión
     // ==================================================
     private void invalidateSession(SessionEntity s) {
-        s.setValid(false);
-        s.setStatus("inactive");
-        repo.save(s);
-
-        presence.setOffline(s.getUserId(), s.getSessionId());
+        try {
+            String sid = s.getSessionId();
+            String uid = s.getUserId();
+            log.debug("invalidateSession: before -> sessionId={}, userId={}, valid={}, status={}", sid, uid, s.isValid(), s.getStatus());
+            s.setValid(false);
+            s.setStatus("inactive");
+            repo.save(s);
+            presence.setOffline(uid, sid);
+            log.info("invalidateSession: after -> sessionId={}, userId={} marked invalid/inactive", sid, uid);
+        } catch (Exception e) {
+            log.error("invalidateSession: error invalidating session id={} : {}", s == null ? "<null>" : s.getSessionId(), e.getMessage(), e);
+        }
     }
 }

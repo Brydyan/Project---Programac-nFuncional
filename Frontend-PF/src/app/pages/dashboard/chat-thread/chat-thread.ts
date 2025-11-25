@@ -316,7 +316,7 @@ export class ChatThread implements OnInit, OnDestroy {
     try {
       // Al cerrar la pestaña, invalidamos la sesión (logout) para que el estado sea OFFLINE
       const token = localStorage.getItem('token');
-      let url = `/app/v1/sessions/logout/${session.sessionId}`;
+      let url = `/app/v1/sessions/inactive/${session.sessionId}`;
       if (token) {
         url += `?token=${encodeURIComponent(token)}`;
       }
@@ -328,13 +328,13 @@ export class ChatThread implements OnInit, OnDestroy {
         } catch (e) {
           // fallback síncrono
           const xhr = new XMLHttpRequest();
-          xhr.open('POST', `/app/v1/sessions/logout/${session.sessionId}`, false);
+          xhr.open('POST', `/app/v1/sessions/inactive/${session.sessionId}`, false);
           if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
           try { xhr.send(null); } catch (e) { /* ignore */ }
         }
       } else {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `/app/v1/sessions/logout/${session.sessionId}`, false);
+        xhr.open('POST', `/app/v1/sessions/inactive/${session.sessionId}`, false);
         if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         try { xhr.send(null); } catch (e) { /* ignore */ }
       }
@@ -368,6 +368,14 @@ export class ChatThread implements OnInit, OnDestroy {
           this.loading = false;
           this.scrollToBottom();
           this.cdr.detectChanges();
+          // Marcar la conversación como leída para el usuario actual
+          try {
+            const convId = this.buildConversationId(this.currentUserId, this.contactId);
+            this.messageService.markConversationRead(convId, this.currentUserId).subscribe({ next: () => {
+              // notificar a la lista de conversaciones que refresque contadores
+              this.convEvents.notifyRefresh();
+            }, error: (e) => console.error('markConversationRead error', e) });
+          } catch (e) { /* ignore */ }
         },
         error: (err) => {
           console.error('Error cargando mensajes', err);
