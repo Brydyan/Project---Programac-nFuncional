@@ -30,26 +30,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
             throws ServletException, IOException {
 
-String path = request.getRequestURI();
+        String path = request.getRequestURI();
 
-// Excluir el endpoint de verificación
-if (path.contains("/app/v1/auth/verify-password")) {
-    filterChain.doFilter(request, response);
-    return;
-}
+        // 🟦 REGLA ESPECIAL: endpoint de verificación de contraseña
+        if (path.contains("/app/v1/auth/verify-password")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
+        // 🔓 RUTAS PÚBLICAS (no procesan JWT)
+        if (path.startsWith("/app/v1/auth/")
+            || path.startsWith("/app/v1/user/available/")
+            || path.startsWith("/app/v1/sessions/token/")
+            || path.startsWith("/app/v1/sessions/refresh/")
+            || path.startsWith("/app/v1/user/token/")
+            || path.startsWith("/ws/")) {
 
-        // 1) Intentar leer token del header Authorization
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // Intentar leer token del header Authorization
         String header = request.getHeader("Authorization");
         String token = null;
         if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
             token = header.substring(7);
         }
 
-        // 2) Si no viene en header (caso sendBeacon / beforeunload), revisar query param ?token=
+        // Si no viene en header → revisar query param ?token=
         if (!StringUtils.hasText(token)) {
             String tokenParam = request.getParameter("token");
             if (StringUtils.hasText(tokenParam)) {
@@ -57,6 +70,7 @@ if (path.contains("/app/v1/auth/verify-password")) {
             }
         }
 
+        // Si NO hay token → seguir sin autenticar
         if (!StringUtils.hasText(token)) {
             filterChain.doFilter(request, response);
             return;
@@ -65,25 +79,25 @@ if (path.contains("/app/v1/auth/verify-password")) {
         try {
             DecodedJWT decoded = jwtUtil.validateToken(token);
 
-            // Validate session in DB
             var opt = sessionService.validateSession(token);
             if (opt.isPresent()) {
-                String userId = jwtUtil.getUserIdFromToken(decoded);
                 String username = jwtUtil.getUsernameFromToken(decoded);
 
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        Collections.emptyList()
-                );
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                username,
+                                null,
+                                Collections.emptyList()
+                        );
+
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
 
         } catch (JWTVerificationException ex) {
-            // Invalid token -> do not set authentication
+            // token inválido → no autenticamos
         } catch (Exception ex) {
-            // Any other error -> do not set authentication
+            // no rompemos la request
         }
 
         filterChain.doFilter(request, response);
