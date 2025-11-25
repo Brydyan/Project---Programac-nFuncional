@@ -64,4 +64,32 @@ public class ChannelService {
         }
         return false;
     }
+
+    public List<ChannelEntity> searchPublic(String name) {
+        return channelRepository
+            .findByTypeAndNameContainingIgnoreCase("PUBLIC", name);
+    }
+
+
+    public ChannelEntity joinChannel(String channelId, String userId) {
+        Optional<ChannelEntity> opt = channelRepository.findById(channelId);
+        if (!opt.isPresent()) return null;
+
+        ChannelEntity ch = opt.get();
+
+        if (!"PUBLIC".equals(ch.getType())) {
+            throw new IllegalArgumentException("Solo puedes unirte a canales PUBLIC");
+        }
+
+        if (!ch.getMembers().contains(userId)) {
+            ch.getMembers().add(userId);
+        }
+
+        return channelRepository.save(ch);
+    }
+    // Filtrado por miembro
+    public List<ChannelEntity> getChannelsByMemberId(String userId) {
+        // Llama al nuevo método del Repository para filtrar por ID de miembro
+        return channelRepository.findByMembersContaining(userId); 
+    }
 }

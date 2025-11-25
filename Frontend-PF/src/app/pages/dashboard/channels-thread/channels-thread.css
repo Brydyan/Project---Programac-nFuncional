@@ -1,0 +1,158 @@
+.channel-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #0f0f17;
+  color: #fff;
+}
+
+.channel-header {
+  padding: 15px 20px;
+  background: #14141f;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #222;
+}
+
+.channel-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.channel-status {
+  font-size: 14px;
+  margin-left: 10px;
+  color: #6edc6e;
+}
+
+.channel-body {
+  display: flex;
+  flex: 1;
+  height: 100%;
+}
+
+.chat-area {
+  flex: 3;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.empty-state {
+  text-align: center;
+  margin-top: 50px;
+  opacity: 0.6;
+}
+
+.message-row {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.message-left {
+  justify-content: flex-start;
+}
+
+.message-right {
+  justify-content: flex-end;
+}
+
+.message-bubble {
+  max-width: 65%;
+  padding: 12px 15px;
+  border-radius: 12px;
+  background: #1e1e2e;
+}
+
+.message-right .message-bubble {
+  background: #a48cfb;
+  color: #000;
+}
+
+.message-author {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-bottom: 5px;
+}
+
+.message-text {
+  font-size: 15px;
+}
+
+.message-time {
+  margin-top: 5px;
+  font-size: 12px;
+  opacity: 0.6;
+  text-align: right;
+}
+
+.channel-sidebar {
+  flex: 1;
+  padding: 20px;
+  background: #14141f;
+  border-left: 1px solid #222;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* separa avatar, nombre y puntito */
+  margin-bottom: 10px;
+}
+
+.avatar {
+  width: 35px;
+  height: 35px;
+  background: gray;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.member-name {
+  flex: 1; /* ocupa el espacio disponible */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.online-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: gray;
+  flex-shrink: 0;
+}
+
+.online-dot.online {
+  background: #6edc6e;
+}
+
+.chat-input {
+  padding: 15px;
+  border-top: 1px solid #222;
+  background: #14141f;
+}
+
+.input-area {
+  display: flex;
+  align-items: center;
+}
+
+input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  background: #1e1e2e;
+  color: #fff;
+}
+
+.send-btn {
+  margin-left: 10px;
+  padding: 10px 15px;
+  background: #a48cfb;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+}
