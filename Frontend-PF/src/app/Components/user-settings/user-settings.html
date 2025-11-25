@@ -228,6 +228,7 @@
               </tr>
             </thead>
             <tbody>
+              <tr *ngIf="sessionsLoading"><td colspan="5">Cargando sesiones...</td></tr>
               <tr *ngFor="let s of sessionsAll">
                 <td>{{ s.device }}</td>
                 <td>{{ s.browser }}</td>
@@ -235,7 +236,7 @@
                 <td>{{ s.ipAddress }}</td>
                 <td>{{ s.lastActivity | date:'short' }}</td>
               </tr>
-              <tr *ngIf="sessionsAll.length === 0"><td colspan="5">No hay sesiones registradas.</td></tr>
+              <tr *ngIf="!sessionsLoading && sessionsAll.length === 0"><td colspan="5">No hay sesiones registradas.</td></tr>
             </tbody>
           </table>
         </div>
@@ -253,6 +254,7 @@
               </tr>
             </thead>
             <tbody>
+              <tr *ngIf="sessionsLoading"><td colspan="6">Cargando sesiones...</td></tr>
               <tr *ngFor="let s of sessionsCurrent">
                 <td>{{ s.device }}</td>
                 <td>{{ s.browser }}</td>
@@ -261,7 +263,7 @@
                 <td>{{ s.status }}</td>
                 <td>{{ s.lastActivity | date:'short' }}</td>
               </tr>
-              <tr *ngIf="sessionsCurrent.length === 0"><td colspan="6">No hay sesiones activas.</td></tr>
+              <tr *ngIf="!sessionsLoading && sessionsCurrent.length === 0"><td colspan="6">No hay sesiones activas.</td></tr>
             </tbody>
           </table>
         </div>
@@ -307,7 +309,7 @@
 
 <!-- Modal confirmar contraseña -->
 <div class="modal-backdrop" *ngIf="showPasswordModal">
-  <form class="modal-card" (ngSubmit)="confirmPassword()" autocomplete="off">
+  <form class="modal-card" (ngSubmit)="confirmPassword($event)" autocomplete="off">
     <h3>Confirma tu contraseña</h3>
     <p>Introduce tu contraseña para acceder a Seguridad e inicio de sesión.</p>
     <input
@@ -316,12 +318,11 @@
       name="passwordConfirm"
       class="form-input"
       placeholder="Contraseña"
-      (keydown.enter)="confirmPassword()"
       autocomplete="new-password"
     />
     <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end">
       <button class="btn-change-photo" type="button" (click)="showPasswordModal=false">Cancelar</button>
-      <button class="btn-save" type="submit">Confirmar</button>
+      <button class="btn-save" type="submit" [disabled]="isVerifyingPassword">Confirmar</button>
     </div>
   </form>
 </div>

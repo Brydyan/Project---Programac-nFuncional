@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../Service/session.service';
 import { UserService } from '../../Service/user.service';
 import { AuthService } from '../../Service/AuthService';
+import { finalize, take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-user-settings',
@@ -85,15 +86,18 @@ export class UserSettings {
   private sessionService = inject(SessionService);
   private userService = inject(UserService);
   private authService = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
 
   showSecurity = false;
   showPasswordModal = false;
   passwordConfirm = '';
+  isVerifyingPassword = false;
   selectedSecurityTab: 'where' | 'current' = 'where';
 
   userIdForSessions: string | null = null;
   sessionsAll: any[] = [];
   sessionsCurrent: any[] = [];
+  sessionsLoading = false;
 
   // Abrir el panel de Seguridad - solicita contraseña
   openSecurity(tab: 'where' | 'current' = 'where') {
@@ -107,47 +111,72 @@ export class UserSettings {
   }
 
   // Verificar contraseña (usa el endpoint /auth/login para validar)
-  confirmPassword() {
+  confirmPassword(event?: Event) {
+    event?.preventDefault();
+    if (this.isVerifyingPassword) return;
+
+    const password = this.passwordConfirm.trim();
+    if (!password) {
+      alert('Ingresa tu contraseña.');
+      return;
+    }
+
+    this.isVerifyingPassword = true;
     // obtener userId desde sesión actual
     const session = this.sessionService.currentSession;
     const userId = session?.userId;
     if (!userId) {
       alert('No se pudo obtener el usuario actual.');
       this.showPasswordModal = false;
+      this.isVerifyingPassword = false;
       return;
     }
     // Verificar por userId para evitar creación de sesión accidental
-    this.authService.verifyById({ userId, password: this.passwordConfirm }).subscribe(
-      () => {
-        // validado correctamente: cerrar modal y abrir seguridad (con pequeño retardo para evitar solapamiento)
-        this.showPasswordModal = false;
-        // limpiar la contraseña por seguridad
-        this.passwordConfirm = '';
-        this.userIdForSessions = userId;
-        // esperar un tick para evitar que la ventana modal y el panel se solapen visualmente
-        setTimeout(() => {
-          this.showSecurity = true;
-          this.loadSessions();
-        }, 120);
-      },
-      (err: any) => {
-        console.error('Password verification failed', err);
-        alert('Contraseña incorrecta.');
-      }
-    );
+    this.authService.verifyById({ userId, password })
+      .pipe(
+        take(1),
+        finalize(() => { this.isVerifyingPassword = false; })
+      )
+      .subscribe({
+        next: () => {
+          // validado correctamente: cerrar modal y abrir seguridad (con pequeño retardo para evitar solapamiento)
+          this.showPasswordModal = false;
+          this.cdr.detectChanges(); // fuerza cierre inmediato del modal
+          // limpiar la contraseña por seguridad
+          this.passwordConfirm = '';
+          this.userIdForSessions = userId;
+          // esperar un tick para evitar que la ventana modal y el panel se solapen visualmente
+          setTimeout(() => {
+            this.showSecurity = true;
+            this.loadSessions();
+            this.cdr.detectChanges();
+          }, 120);
+        },
+        error: (err: any) => {
+          console.error('Password verification failed', err);
+          alert('Contraseña incorrecta.');
+          this.cdr.detectChanges();
+        }
+      });
   }
 
   // Cargar sesiones desde backend
   loadSessions() {
     if (!this.userIdForSessions) return;
-    this.sessionService.getByUserId(this.userIdForSessions).subscribe(
-      (list: unknown) => {
-        const arr = (list as any[]) || [];
-        this.sessionsAll = arr;
-        this.sessionsCurrent = arr.filter((s: any) => s.valid === true);
-      },
-      (err) => { console.error('Error cargando sesiones', err); alert('Error cargando sesiones'); }
-    );
+    this.sessionsLoading = true;
+    this.sessionService.getByUserId(this.userIdForSessions)
+      .pipe(finalize(() => {
+        this.sessionsLoading = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe(
+        (list: unknown) => {
+          const arr = (list as any[]) || [];
+          this.sessionsAll = arr;
+          this.sessionsCurrent = arr.filter((s: any) => s.valid === true);
+        },
+        (err) => { console.error('Error cargando sesiones', err); alert('Error cargando sesiones'); }
+      );
   }
 
   saveChanges() {
