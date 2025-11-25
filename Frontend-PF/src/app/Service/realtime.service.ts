@@ -11,12 +11,13 @@ export class RealtimeService {
 
   constructor() {
     // SOLO DOCKER: websocket siempre pasa por Nginx
-    const brokerURL = `ws://${window.location.host}/ws`;
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const brokerURL = `${wsProtocol}://${window.location.host}/ws`;
 
     console.log('[STOMP] Docker brokerURL =', brokerURL);
 
-    this.client = new Client({
-      brokerURL: `ws://${window.location.host}/ws`,
+     this.client = new Client({
+      brokerURL,
       reconnectDelay: 5000,
       debug: (str) => console.log('[STOMP]', str),
     });
