@@ -30,17 +30,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1) Intentar leer token del header Authorization
+        String path = request.getRequestURI();
+
+        // 🔓 1) RUTAS PÚBLICAS → NO PROCESAMOS JWT
+        // Solo saltamos el procesamiento para rutas públicas explicitadas
+        if (path.startsWith("/app/v1/auth/")
+            || path.startsWith("/app/v1/user/available/")
+            || path.startsWith("/app/v1/sessions/token/")
+            || path.startsWith("/app/v1/sessions/refresh/")
+            || path.startsWith("/app/v1/user/token/")
+            || path.startsWith("/ws/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 2) Intentar leer token del header Authorization
         String header = request.getHeader("Authorization");
         String token = null;
         if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
             token = header.substring(7);
         }
 
-        // 2) Si no viene en header (caso sendBeacon / beforeunload), revisar query param ?token=
+        // 3) Si no viene en header (caso sendBeacon / beforeunload), revisar query param ?token=
         if (!StringUtils.hasText(token)) {
             String tokenParam = request.getParameter("token");
             if (StringUtils.hasText(tokenParam)) {
@@ -48,6 +64,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        // 4) Si NO hay token → seguimos sin autenticar
         if (!StringUtils.hasText(token)) {
             filterChain.doFilter(request, response);
             return;
@@ -56,25 +73,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             DecodedJWT decoded = jwtUtil.validateToken(token);
 
-            // Validate session in DB
+            // Validar sesión en la BD
             var opt = sessionService.validateSession(token);
             if (opt.isPresent()) {
-                String userId = jwtUtil.getUserIdFromToken(decoded);
                 String username = jwtUtil.getUsernameFromToken(decoded);
 
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        Collections.emptyList()
-                );
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                username,
+                                null,
+                                Collections.emptyList()
+                        );
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
 
         } catch (JWTVerificationException ex) {
-            // Invalid token -> do not set authentication
+            // Token inválido → no seteamos autenticación, pero tampoco devolvemos 403
         } catch (Exception ex) {
-            // Any other error -> do not set authentication
+            // Cualquier otro error → tampoco rompemos la request
         }
 
         filterChain.doFilter(request, response);
