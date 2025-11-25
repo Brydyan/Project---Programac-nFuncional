@@ -35,6 +35,16 @@ export class AuthService {
     return this.http.post(`${this.api}/auth/login`, data);
   }
 
+  // Verificar contraseña sin crear sesión
+  verifyPassword(data: { identifier: string; password: string }) {
+    return this.http.post(`${this.api}/auth/verify`, data);
+  }
+
+  // Verificar contraseña usando userId (no crea sesión)
+  verifyById(data: { userId: string; password: string }) {
+    return this.http.post(`${this.api}/auth/verify-by-id`, data);
+  }
+
   // ============================
   //  🔵 REGISTRO
   // ============================

@@ -22,4 +22,25 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequest req, HttpServletRequest request) {
         return ResponseEntity.ok(authService.login(req, request));
     }
+
+    @PostMapping("/verify-password")
+    public ResponseEntity<?> verifyPassword(@RequestBody LoginRequest req) {
+        try {
+            authService.verifyPassword(req);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body("Usuario o contraseña incorrectos");
+        }
+    }
+    
+    @PostMapping("/verify-by-id")
+    public ResponseEntity<?> verifyById(@RequestBody ec.edu.upse.backend.dto.VerifyByIdRequest req) {
+        try {
+            authService.verifyPasswordById(req.getUserId(), req.getPassword());
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body("Usuario o contraseña incorrectos");
+        }
+    }
+
 }

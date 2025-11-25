@@ -384,3 +384,77 @@
 .btn-icon {
   font-size: 16px;
 }
+
+/* Seguridad */
+.security-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  button {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    cursor: pointer;
+  }
+
+  button.active {
+    background: #8b5cf6;
+    border-color: #7c3aed;
+  }
+}
+
+.security-table table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.security-table th, .security-table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid #334155;
+  font-size: 13px;
+  color: #e2e8f0;
+}
+
+.modal-backdrop {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2,6,23,0.6);
+  z-index: 9999;
+}
+
+.modal-card {
+  background: #0f172a;
+  padding: 20px;
+  border-radius: 12px;
+  width: 420px;
+  border: 1px solid #334155;
+  box-sizing: border-box;
+  z-index: 10000;
+}
+
+.modal-card .form-input {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+
+.modal-card h3 {
+  margin: 0 0 8px 0;
+  color: #a78bfa;
+}
+
+.modal-card p {
+  margin: 0 0 12px 0;
+  color: #94a3b8;
+}

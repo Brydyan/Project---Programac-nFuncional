@@ -33,6 +33,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+String path = request.getRequestURI();
+
+// Excluir el endpoint de verificación
+if (path.contains("/app/v1/auth/verify-password")) {
+    filterChain.doFilter(request, response);
+    return;
+}
+
+
         // 1) Intentar leer token del header Authorization
         String header = request.getHeader("Authorization");
         String token = null;
