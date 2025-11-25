@@ -1,0 +1,50 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://root:mi_clave_secreta@mongo:27017/YARGFlow?authSource=admin
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=pon_una_clave_fuerte_aqui
+      - JWT_EXPIRATION_HOURS=24
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - pfnet
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - pfnet
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=mi_clave_secreta
+    volumes:
+      - ./data/mongo:/data/db
+    networks:
+      - pfnet
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - pfnet
+
+networks:
+  pfnet:
+    driver: bridge

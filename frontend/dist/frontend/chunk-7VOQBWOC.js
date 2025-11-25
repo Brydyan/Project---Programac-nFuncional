@@ -1,0 +1,1 @@
+import{P as o,h as r}from"./chunk-GOBX2HRP.js";var i=class t{subject=new r;messages$=this.subject.asObservable();show(s,e="info"){let a={text:s,type:e,id:Math.random().toString(36).slice(2)};this.subject.next(a)}static \u0275fac=function(e){return new(e||t)};static \u0275prov=o({token:t,factory:t.\u0275fac,providedIn:"root"})};export{i as a};
