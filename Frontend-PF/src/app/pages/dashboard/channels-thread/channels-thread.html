@@ -1,0 +1,54 @@
+<div class="channel-container">
+
+  <!-- HEADER -->
+  <header class="channel-header">
+    <div class="header-left">
+      <h2 class="channel-title">{{ channelName }}</h2>
+      <span class="channel-status">🟢 En línea</span>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn">⋯</button>
+    </div>
+  </header>
+
+  <div class="channel-body">
+
+    <!-- CHAT -->
+    <main class="chat-area" #scrollMe>
+      <div *ngIf="messages.length === 0" class="empty-state">
+        <h3>No hay mensajes aún</h3>
+        <p>Comienza la conversación enviando un mensaje.</p>
+      </div>
+
+      <div *ngFor="let msg of messages" class="message-row"
+        [ngClass]="{ 'message-right': msg.senderId === currentUserId, 'message-left': msg.senderId !== currentUserId }">
+        <div class="message-bubble">
+          <div class="message-author">{{ getSenderName(msg.senderId) }}</div>
+          <div class="message-text">{{ msg.messageContent }}</div>
+          <div class="message-time">{{ msg.timestamp | date:'shortTime' }}</div>
+        </div>
+      </div>
+    </main>
+
+    <!-- SIDEBAR MIEMBROS -->
+    <aside class="channel-sidebar">
+      <h3>Miembros en línea ({{ onlineMembers.length }})</h3>
+
+      <div *ngFor="let m of membersInfo" class="member-item">
+        <div class="avatar"></div>
+        <span class="member-name">{{ m.username }}</span>
+        <span class="online-dot" [class.online]="m.online"></span>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- INPUT -->
+  <footer class="chat-input">
+    <div class="input-area">
+      <input type="text" placeholder="Escribe tu mensaje…" [(ngModel)]="newMessage" (keyup.enter)="sendMessage()" />
+      <button class="send-btn" (click)="sendMessage()">Enviar</button>
+    </div>
+  </footer>
+
+</div>
