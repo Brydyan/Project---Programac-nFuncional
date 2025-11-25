@@ -268,7 +268,7 @@
                 <td>{{ s.location }}</td>
                 <td>{{ s.ipAddress }}</td>
                 <td>
-                  <button class="btn-change-photo" type="button" (click)="logoutSession(s.sessionId || s.id)">Cerrar</button>
+                  <button class="btn-change-photo" type="button" (click)="logoutSession(s.sessionId)">Cerrar</button>
                 </td>
                 <td>{{ s.status }}</td>
                 <td>{{ s.lastActivity | date:'short' }}</td>

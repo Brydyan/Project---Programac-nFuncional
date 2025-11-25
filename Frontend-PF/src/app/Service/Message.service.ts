@@ -33,4 +33,19 @@ export class MessageService {
       content
     });
   }
+
+  // Obtener la cantidad de mensajes no leídos en una conversación (por usuario)
+  getUnreadCount(convId: string, userId: string) {
+    return this.http.get<number>(`${this.baseUrl}/unread/conversation/${convId}/${userId}`);
+  }
+
+  // Obtener cantidad de conversaciones con pendientes para un usuario
+  getPendingConversationsCount(userId: string) {
+    return this.http.get<number>(`${this.baseUrl}/unread/user/${userId}`);
+  }
+
+  // Marcar conversación como leída (por el usuario)
+  markConversationRead(convId: string, userId: string) {
+    return this.http.post(`${this.baseUrl}/mark-read/${convId}/${userId}`, {});
+  }
 }
