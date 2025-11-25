@@ -65,6 +65,12 @@ export class SessionService {
     );
   }
 
+  // Obtener todas las sesiones asociadas a un usuario
+  getByUserId(userId: string) {
+    if (!userId) return new Observable();
+    return this.http.get<any[]>(`${this.api}/user/${userId}`);
+  }
+
   // Logout por sessionId (igual que antes)
   logout(sessionId: string): Observable<any> {
     return this.http.post(`${this.api}/logout/${sessionId}`, {});

@@ -36,6 +36,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
                 // ===== PÚBLICAS =====
+                .requestMatchers("/app/v1/auth/verify-password").permitAll()
+
                 .requestMatchers("/app/v1/auth/**").permitAll()
                 .requestMatchers("/app/v1/sessions/token/**").permitAll()
                 .requestMatchers("/app/v1/sessions/refresh/**").permitAll()
