@@ -38,8 +38,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(authz -> authz
                 // ======================
-                // 🔓 RUTAS PUBLICAS
+                // 🔓 RUTAS PÚBLICAS
                 // ======================
+                // Endpoint específico de verificación de contraseña
+                .requestMatchers("/app/v1/auth/verify-password").permitAll()
+
+                // Auth en general (login, register, etc.)
                 .requestMatchers("/app/v1/auth/**").permitAll()
                 .requestMatchers("/app/v1/user/available/**").permitAll()
                 .requestMatchers("/app/v1/sessions/token/**").permitAll()
@@ -49,10 +53,6 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/app/v1/sessions/online/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/app/v1/sessions/offline/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
-
-                // AÑADE ESTO:
-                .requestMatchers(HttpMethod.POST, "/app/v1/sessions/online/**").permitAll()
-
 
                 // ======================
                 // 🔐 RUTAS PRIVADAS
@@ -64,7 +64,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
 
-            // Insertamos el filtro JWT
+            // Insertamos el filtro JWT antes del UsernamePasswordAuthenticationFilter
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 
             // Desactivamos login form y basic auth
