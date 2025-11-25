@@ -91,4 +91,25 @@ public class MessageController {
         );
         return ResponseEntity.ok(saved);
     }
+
+    // Obtener cantidad de mensajes no leídos en una conversación
+    @GetMapping("/unread/conversation/{convId}/{userId}")
+    public ResponseEntity<Long> getUnreadCount(@PathVariable String convId, @PathVariable String userId) {
+        long count = messageService.getUnreadCountForConversation(convId, userId);
+        return ResponseEntity.ok(count);
+    }
+
+    // Obtener cantidad de conversaciones con mensajes pendientes para un usuario
+    @GetMapping("/unread/user/{userId}")
+    public ResponseEntity<Long> getPendingConversations(@PathVariable String userId) {
+        long count = messageService.getPendingConversationsCountForUser(userId);
+        return ResponseEntity.ok(count);
+    }
+
+    // Marcar conversación como leída
+    @PostMapping("/mark-read/{convId}/{userId}")
+    public ResponseEntity<Void> markRead(@PathVariable String convId, @PathVariable String userId) {
+        messageService.markConversationRead(convId, userId);
+        return ResponseEntity.ok().build();
+    }
 }

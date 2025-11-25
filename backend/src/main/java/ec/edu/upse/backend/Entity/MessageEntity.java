@@ -20,4 +20,10 @@ public class MessageEntity {
     private Instant timestamp = Instant.now();
     private boolean edited = false;
     private boolean deleted = false;
+    // Estado del mensaje: SENT, DELIVERED, READ
+    public enum MessageStatus {
+        SENT, DELIVERED, READ
+    }
+
+    private MessageStatus status = MessageStatus.SENT;
 }
