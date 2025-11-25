@@ -11,4 +11,6 @@ public class AuthResponse {
     private String token;
     private String userId;
     private String username;
+    private String ip;
+    private String location;
 }
