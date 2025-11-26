@@ -17,7 +17,7 @@ export class SessionService {
   private sessionWatcherSub: Subscription | null = null;
   private watchIntervalMs = 15000; // 15s - intervalo para verificar validez de sesión
   private presenceHeartbeatSub: Subscription | null = null;
-  private presenceHeartbeatMs = 30000; // 30s - interval to refresh presence TTL
+  private presenceHeartbeatMs = 10000; // 10s - interval to refresh presence TTL
 
   constructor(private http: HttpClient, private router: Router) {}
 
