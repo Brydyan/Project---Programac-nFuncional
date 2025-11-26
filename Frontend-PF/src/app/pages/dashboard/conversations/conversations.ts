@@ -25,8 +25,8 @@ import { ChatMessage } from '../../../Service/Message.service';
 export class Conversations implements OnInit, OnDestroy {
 
   conversations: ConversationSummary[] = [];
-  loading = true;              // solo para la PRIMER carga
-  initialLoadDone = false;     //  nuevo flag
+  loading = true;              
+  initialLoadDone = false;     
   error: string | null = null;
   currentUserId: string | null = null;
 
@@ -36,6 +36,9 @@ export class Conversations implements OnInit, OnDestroy {
 
   private inboxSub?: Subscription;
   private eventsSub?: Subscription;
+
+  private presenceIntervalId: any = null;
+
   selectedConversationId: string | null = null;
 
   constructor(
@@ -94,52 +97,84 @@ export class Conversations implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.eventsSub?.unsubscribe();
     this.inboxSub?.unsubscribe();
+    if (this.presenceIntervalId) {
+      clearInterval(this.presenceIntervalId);
+      this.presenceIntervalId = null;
+    }
+
   }
 
   // showLoading = true solo en primera carga
-  loadConversations(showLoading: boolean): void {
-    if (!this.currentUserId) {
+  private loadConversations(showLoading: boolean): void {
+  if (!this.currentUserId) return;
+
+  if (showLoading && !this.initialLoadDone) {
+    this.loading = true;
+    this.cdr.detectChanges();
+  }
+
+  console.log('[Conversations] cargando conversaciones de', this.currentUserId);
+
+  this.convService.getByUser(this.currentUserId).subscribe({
+    next: (data: ConversationSummary[]) => {
+      console.log('[Conversations] conversaciones recibidas', data);
+
+      this.conversations = data.map(conv => ({
+        ...conv,
+        lastTimeLabel: conv.lastTime
+          ? this.formatTime(conv.lastTime)
+          : ''
+      }));
+
+      this.initialLoadDone = true;
       this.loading = false;
       this.cdr.detectChanges();
-      return;
-    }
 
-    if (showLoading && !this.initialLoadDone) {
-      this.loading = true;
+      // 🆕 refrescar presencia ahora…
+      this.updatePresenceForAll();
+      // 🆕 …y seguir refrescando cada cierto tiempo
+      this.startPresenceAutoRefresh();
+    },
+    error: (err) => {
+      console.error('[Conversations] error getByUser', err);
+      this.error = 'No se pudieron cargar conversaciones';
+      this.loading = false;
       this.cdr.detectChanges();
     }
+  });
+}
 
-    console.log('[Conversations] cargando conversaciones de', this.currentUserId);
+// 🔁 Llama al endpoint realtime para cada conversación
+private updatePresenceForAll(): void {
+  if (!this.conversations.length) return;
 
-    this.convService.getByUser(this.currentUserId).subscribe({
-      next: (data: ConversationSummary[]) => {
-        console.log('[Conversations] conversaciones recibidas', data);
+  this.conversations.forEach(conv => {
+    this.http
+      .get(`/app/v1/presence/realtime/${conv.id}`, { responseType: 'text' })
+      .subscribe({
+        next: (status) => {
+          conv.presenceStatus = (status as string) || 'OFFLINE';
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          conv.presenceStatus = 'OFFLINE';
+          this.cdr.detectChanges();
+        }
+      });
+  });
+}
 
-        this.conversations = data.map(conv => ({
-          ...conv,
-          lastTimeLabel: conv.lastTime
-            ? this.formatTime(conv.lastTime)
-            : ''
-        }));
-
-        this.initialLoadDone = true;
-        this.loading = false;
-        this.cdr.detectChanges();
-
-        // Obtener estado realtime para cada conversación (optimizable)
-        this.conversations.forEach(conv => {
-          this.http.get(`/app/v1/presence/realtime/${conv.id}`, { responseType: 'text' })
-            .subscribe({ next: (status) => { conv.presenceStatus = status; this.cdr.detectChanges(); }, error: () => { conv.presenceStatus = 'OFFLINE'; } });
-        });
-      },
-      error: (err) => {
-        console.error('[Conversations] error getByUser', err);
-        this.error = 'No se pudieron cargar conversaciones';
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+private startPresenceAutoRefresh(): void {
+  // si ya había un timer, lo reiniciamos
+  if (this.presenceIntervalId) {
+    clearInterval(this.presenceIntervalId);
+    this.presenceIntervalId = null;
   }
+
+  this.presenceIntervalId = setInterval(() => {
+    this.updatePresenceForAll();
+  }, 5000);
+}
 
   private applyIncomingMessage(msg: ChatMessage): void {
     if (!this.currentUserId) return;
