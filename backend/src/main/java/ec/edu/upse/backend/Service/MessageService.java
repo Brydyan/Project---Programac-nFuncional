@@ -122,19 +122,7 @@ public MessageEntity sendDirect(String senderId, String receiverId, String conte
     // 1) ID de la conversación (mismo criterio que en el front)
     String convId = buildConversationId(senderId, receiverId);
 
-    // 2) Notificar al hilo directo (chat abierto)
-    messagingTemplate.convertAndSend(
-            "/topic/direct." + convId,
-            saved
-    );
-
-    // 3) 🆕 Notificar la bandeja del receptor (lista de conversaciones)
-    messagingTemplate.convertAndSend(
-            "/topic/inbox." + receiverId,
-            saved
-    );
-
-    // 4) Encolar en Redis como "no leído" para la conversación, por receptor
+    // 2) Encolar en Redis como "no leído" para la conversación, por receptor
     try {
         String redisConv = convId;
         // lista por usuario y conversación -> permite que solo el receptor vea su contador
@@ -149,6 +137,18 @@ public MessageEntity sendDirect(String senderId, String receiverId, String conte
         // no queremos que un fallo en Redis bloquee el envío
         System.err.println("Redis enqueue failed: " + e.getMessage());
     }
+
+    // 3) Notificar al hilo directo (chat abierto)
+    messagingTemplate.convertAndSend(
+            "/topic/direct." + convId,
+            saved
+    );
+
+    // 4) 🆕 Notificar la bandeja del receptor (lista de conversaciones)
+    messagingTemplate.convertAndSend(
+            "/topic/inbox." + receiverId,
+            saved
+    );
 
     return saved;
 }

@@ -166,8 +166,18 @@ export class ChatThread implements OnInit, OnDestroy {
             this.scrollToBottom();
             this.cdr.detectChanges();
 
-            // 👇 avisar que hay cambios en conversaciones
-            this.convEvents.notifyRefresh();
+            // Marcar la conversación como leída para el usuario actual
+            try {
+              this.messageService.markConversationRead(convId, this.currentUserId).subscribe({
+                next: () => {
+                  // notificar a la lista de conversaciones que refresque contadores
+                  this.convEvents.notifyRefresh();
+                },
+                error: (e) => console.error('markConversationRead error', e),
+              });
+            } catch (e) {
+              // ignore
+            }
           });
       },
       error: () => {
