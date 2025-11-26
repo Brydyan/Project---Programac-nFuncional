@@ -17,8 +17,8 @@ public class RealtimePresenceService {
     private final StringRedisTemplate redis;
 
     private static final String PREFIX = "presence:user:";
-    // TTL por defecto 5 minutos
-    private static final Duration TTL = Duration.ofMinutes(5);
+    // TTL por defecto 60 segundos -> presencia expira rápido si el cliente cierra el navegador
+    private static final Duration TTL = Duration.ofSeconds(60);
 
     public void setOnline(String userId, String sessionId) {
         String key = PREFIX + userId + ":session:" + sessionId;

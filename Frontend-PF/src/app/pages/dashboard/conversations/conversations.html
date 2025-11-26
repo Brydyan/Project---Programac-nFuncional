@@ -52,9 +52,9 @@
           <span class="conversation-name">{{ conv.name }}</span>
           <span class="conversation-status">
             <small *ngIf="conv.presenceStatus">
-              <span *ngIf="conv.presenceStatus === 'ONLINE'">En línea</span>
-              <span *ngIf="conv.presenceStatus === 'INACTIVE'">Inactivo</span>
-              <span *ngIf="conv.presenceStatus === 'OFFLINE'">Fuera de línea</span>
+              <span *ngIf="conv.presenceStatus === 'ONLINE'" class="presence-badge online">En línea</span>
+              <span *ngIf="conv.presenceStatus === 'INACTIVE'" class="presence-badge inactive">Inactivo</span>
+              <span *ngIf="conv.presenceStatus === 'OFFLINE'" class="presence-badge offline">Fuera de línea</span>
             </small>
           </span>
           <span class="conversation-time">{{ conv.lastTimeLabel }}</span>

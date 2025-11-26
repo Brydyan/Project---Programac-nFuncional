@@ -16,6 +16,8 @@ export class SessionService {
 
   private sessionWatcherSub: Subscription | null = null;
   private watchIntervalMs = 15000; // 15s - intervalo para verificar validez de sesión
+  private presenceHeartbeatSub: Subscription | null = null;
+  private presenceHeartbeatMs = 30000; // 30s - interval to refresh presence TTL
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -68,7 +70,10 @@ export class SessionService {
       tap(session => {
         this._session$.next(session);
         // iniciar el watcher cuando se obtiene una sesión válida
-        if (session && session.valid !== false) this.startSessionWatcher();
+        if (session && session.valid !== false) {
+          this.startSessionWatcher();
+          this.startPresenceHeartbeat();
+        }
       })
     );
   }
@@ -140,6 +145,36 @@ export class SessionService {
     if (this.sessionWatcherSub) {
       this.sessionWatcherSub.unsubscribe();
       this.sessionWatcherSub = null;
+    }
+    this.stopPresenceHeartbeat();
+  }
+
+  // Heartbeat to keep presence TTL refreshed while the client tab is open
+  startPresenceHeartbeat() {
+    if (this.presenceHeartbeatSub) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // call refreshActivity immediately and then every presenceHeartbeatMs
+    this.presenceHeartbeatSub = timer(0, this.presenceHeartbeatMs).pipe(
+      switchMap(() => this.refreshActivity())
+    ).subscribe({
+      next: () => {
+        // noop
+      },
+      error: (e) => {
+        console.warn('Presence heartbeat error', e);
+        // if heartbeat fails, stop it to avoid noisy loops
+        this.stopPresenceHeartbeat();
+      }
+    });
+  }
+
+  stopPresenceHeartbeat() {
+    if (this.presenceHeartbeatSub) {
+      this.presenceHeartbeatSub.unsubscribe();
+      this.presenceHeartbeatSub = null;
     }
   }
 
