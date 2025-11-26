@@ -57,6 +57,7 @@
         >
           <span class="menu-icon">{{ section.icon }}</span>
           <span class="menu-title">{{ section.title }}</span>
+          <span *ngIf="section.route === '/dashboard/conversations' && pendingConversationsCount > 0" class="menu-badge">{{ pendingConversationsCount }}</span>
         </button>
       </nav>
      
