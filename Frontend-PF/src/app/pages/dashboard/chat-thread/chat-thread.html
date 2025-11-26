@@ -5,7 +5,7 @@
     <div class="chat-header-left">
       <div class="avatar">
         <img
-          src="https://i.pravatar.cc/100?u={{ contactId }}"
+          [src]="contactAvatarUrl || ('https://i.pravatar.cc/100?u=' + contactId)"
           alt="Avatar"
         />
       </div>

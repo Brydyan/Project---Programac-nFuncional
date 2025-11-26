@@ -42,4 +42,11 @@ export class UserService {
     return this.http.get<UserSearchResult[]>(`${this.baseUrl}/by-ids`, { params });
   }
 
+  // Subir foto de perfil al backend (multipart/form-data)
+  uploadPhoto(userId: string, file: File) {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    return this.http.post<any>(`${this.baseUrl}/${userId}/photo-upload`, fd);
+  }
+
 }

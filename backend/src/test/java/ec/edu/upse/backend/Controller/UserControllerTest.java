@@ -38,6 +38,9 @@ class UserControllerTest {
     @MockBean
     private UserService userService;
 
+    @MockBean
+    private ec.edu.upse.backend.Service.FirebaseStorageService firebaseStorageService;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -162,5 +165,40 @@ class UserControllerTest {
 
         mockMvc.perform(delete(BASE_URL + "/99"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void updatePhoto_cuandoExiste_debeRetornar200() throws Exception {
+        UserEntity updated = new UserEntity();
+        updated.setId("5");
+        updated.setPhotoUrl("https://firebase.storage/users/5/avatar.jpg");
+
+        when(userService.updateUserPhoto(eq("5"), anyString(), anyString())).thenReturn(updated);
+
+        Map<String, String> body = new HashMap<>();
+        body.put("photoUrl", "https://firebase.storage/users/5/avatar.jpg");
+        body.put("photoPath", "users/5/avatar.jpg");
+
+        mockMvc.perform(post(BASE_URL + "/5/photo")
+                .contentType("application/json")
+                .content(objectMapper.writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photoUrl").value("https://firebase.storage/users/5/avatar.jpg"));
+    }
+
+    @Test
+    void uploadPhoto_multipart_debeRetornar200() throws Exception {
+        UserEntity updated = new UserEntity();
+        updated.setId("6");
+        updated.setPhotoUrl("https://storage.googleapis.com/bucket/users/6/avatar.jpg");
+
+        when(firebaseStorageService.uploadUserAvatar(eq("6"), any())).thenReturn(java.util.Map.of("photoUrl", "https://storage.googleapis.com/bucket/users/6/avatar.jpg", "photoPath", "users/6/avatar.jpg"));
+        when(userService.updateUserPhoto(eq("6"), anyString(), anyString())).thenReturn(updated);
+
+        org.springframework.mock.web.MockMultipartFile file = new org.springframework.mock.web.MockMultipartFile("file", "avatar.jpg", "image/jpeg", "data".getBytes());
+
+        mockMvc.perform(multipart(BASE_URL + "/6/photo-upload").file(file))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.photoUrl").value("https://storage.googleapis.com/bucket/users/6/avatar.jpg"));
     }
 }

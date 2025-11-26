@@ -8,6 +8,8 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ec.edu.upse.backend.Domain.UserValidator;
 import ec.edu.upse.backend.Entity.UserEntity;
@@ -16,6 +18,7 @@ import ec.edu.upse.backend.dto.UserSummaryDto;
 
 @Service
 public class UserService {
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
     @Autowired
     private UserRepository userRepository;
 
@@ -175,11 +178,11 @@ public class UserService {
                 //para excluir al usuario actual de la busquedad
                 .filter(u -> excludeUserId == null || !u.getId().equals(excludeUserId))
                 .map(u -> new UserSummaryDto(
-                        u.getId(),
-                        u.getUsername(),
-                        u.getDisplayName(),
-                        u.getEmail(),
-                        null 
+                    u.getId(),
+                    u.getUsername(),
+                    u.getDisplayName(),
+                    u.getEmail(),
+                    u.getPhotoUrl()
                 ))
                 .collect(Collectors.toList());
     }
@@ -196,9 +199,25 @@ public class UserService {
                         u.getUsername(),
                         u.getDisplayName(),
                         u.getEmail(),
-                        null
+                        u.getPhotoUrl()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    // Actualizar la foto de perfil (se espera que el cliente suba la imagen a Firebase y envíe la URL pública)
+    public UserEntity updateUserPhoto(String userId, String photoUrl, String photoPath) {
+        logger.info("updateUserPhoto called for userId={} photoUrl={} photoPath={}", userId, photoUrl, photoPath);
+        Optional<UserEntity> aux = userRepository.findById(userId);
+        if (aux.isPresent()) {
+            UserEntity u = aux.get();
+            u.setPhotoUrl(photoUrl);
+            u.setPhotoPath(photoPath);
+            UserEntity saved = userRepository.save(u);
+            logger.info("updateUserPhoto: saved userId={} photoUrl={}", saved.getId(), saved.getPhotoUrl());
+            return saved;
+        }
+        logger.warn("updateUserPhoto: user not found for userId={}", userId);
+        return null;
     }
 
 }

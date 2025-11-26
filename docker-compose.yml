@@ -15,9 +15,16 @@ services:
 
       - JWT_SECRET=pon_aqui_una_clave_larga_y_unica
       - JWT_EXPIRATION_HOURS=24
+      # Firebase credentials: prefer mounting into /secrets inside the container
+      - FIREBASE_CREDENTIALS_PATH=/secrets/archivospv-firebase-adminsdk-fbsvc-e0fd965468.json
+      - FIREBASE_BUCKET=archivospv.firebasestorage.app
+      - firebase.credentials.path=/secrets/archivospv-firebase-adminsdk-fbsvc-e0fd965468.json
+      - firebase.bucket=archivospv.firebasestorage.app
     depends_on:
       - mongodb
       - redis
+    volumes:
+      - ./backend/secrets:/secrets:ro
 
   frontend:
     build: ./Frontend-PF

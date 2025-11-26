@@ -78,7 +78,7 @@ public class ConversationService {
 
 
 
-        String avatarUrl = "";
+        String avatarUrl = otherUserOpt.map(u -> u.getPhotoUrl() == null ? "" : u.getPhotoUrl()).orElse("");
 
         String convId = buildConversationId(userId, otherUserId);
         long unread = 0L;

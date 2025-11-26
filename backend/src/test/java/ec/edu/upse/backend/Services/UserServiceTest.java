@@ -314,4 +314,23 @@ class UserServiceTest {
         verify(userRepository).existsById(id);
         verify(userRepository, never()).deleteById(anyString());
     }
+
+    @Test
+    void updateUserPhoto_cuandoExiste_debeActualizarYRetornarUsuario() {
+        String id = "10";
+        UserEntity existing = new UserEntity();
+        existing.setId(id);
+        existing.setUsername("mario");
+
+        when(userRepository.findById(id)).thenReturn(Optional.of(existing));
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        UserEntity result = userService.updateUserPhoto(id, "https://firebase.storage/avatar.jpg", "users/10/avatar.jpg");
+
+        assertNotNull(result);
+        assertEquals("https://firebase.storage/avatar.jpg", result.getPhotoUrl());
+        assertEquals("users/10/avatar.jpg", result.getPhotoPath());
+        verify(userRepository).findById(id);
+        verify(userRepository).save(any(UserEntity.class));
+    }
 }

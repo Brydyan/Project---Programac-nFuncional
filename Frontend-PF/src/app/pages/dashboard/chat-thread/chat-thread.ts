@@ -32,6 +32,7 @@ export class ChatThread implements OnInit, OnDestroy {
   currentUserId!: string;
 
   contactDisplayName: string | null = null;
+  contactAvatarUrl: string | null = null;
   messages: ChatMessage[] = [];
   newMessage = '';
   loading = true;
@@ -47,6 +48,7 @@ export class ChatThread implements OnInit, OnDestroy {
 
   private routeSub?: Subscription;
   private realtimeSub?: Subscription;
+  private eventsSub?: Subscription;
   private presenceIntervalId: any = null;
   // Presencia
   private activityTimestamp = 0;
@@ -68,6 +70,10 @@ export class ChatThread implements OnInit, OnDestroy {
       this.cdr.detectChanges();
 
       this.loadContact();
+      // Suscribirse a solicitudes de refresh (ej. cuando se actualiza avatar desde settings)
+      this.eventsSub = this.convEvents.refresh$.subscribe(() => {
+        this.loadContact();
+      });
       this.initChat();
       // Registrar handlers globales de presencia (se añaden cuando el componente se crea)
       document.addEventListener('click', this.activityListener);
@@ -81,6 +87,7 @@ export class ChatThread implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.realtimeSub?.unsubscribe();
+    this.eventsSub?.unsubscribe();
     this.stopPresencePolling();
     document.removeEventListener('click', this.activityListener);
     document.removeEventListener('keydown', this.activityListener);
@@ -99,10 +106,15 @@ export class ChatThread implements OnInit, OnDestroy {
     this.userService.getUserById(this.contactId).subscribe({
       next: (user) => {
         this.contactDisplayName = user.displayName || '@' + user.username;
+        // usar `any` para campos opcionales que no están tipados en UserSearchResult
+        const uAny: any = user as any;
+        const avatar = uAny?.photoUrl || uAny?.avatarUrl || uAny?.photo?.url || uAny?.profileImage || null;
+        this.contactAvatarUrl = avatar;
         this.cdr.detectChanges();
       },
       error: () => {
         this.contactDisplayName = null;
+        this.contactAvatarUrl = null;
         this.cdr.detectChanges();
       },
     });

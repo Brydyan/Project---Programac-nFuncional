@@ -38,6 +38,10 @@ public class UserEntity {
     private String day;
     private String month;
     private String year;
+    // Foto de perfil (se almacena en Firebase Storage). `photoUrl` es la URL pública accesible desde el cliente.
+    private String photoUrl;
+    // Opcional: path o id en Firebase Storage (ej: "users/{userId}/avatar.jpg")
+    private String photoPath;
     
     // Método auxiliar para asignar username desde alias si es necesario
     public void processAliasAndNombre() {
