@@ -5,8 +5,8 @@
   <section class="profile-section">
     <div class="section-header">
       <h2>Información Personal</h2>
-      <button class="edit-btn" (click)="enableEditProfile()">
-        {{ editingProfile ? 'Editando...' : 'Editar Perfil' }}
+      <button class="edit-btn" (click)="toggleEditProfile()">
+        {{ editingProfile ? 'Cancelar' : 'Editar Perfil' }}
       </button>
     </div>
 
@@ -86,8 +86,8 @@
   <section class="profile-section">
     <div class="section-header">
       <h2>Información de Contacto</h2>
-      <button class="edit-btn" (click)="enableEditContact()">
-        {{ editingContact ? 'Editando...' : 'Editar Contacto' }}
+      <button class="edit-btn" (click)="toggleEditContact()">
+        {{ editingContact ? 'Cancelar' : 'Editar Contacto' }}
       </button>
     </div>
 

@@ -2,7 +2,7 @@ package ec.edu.upse.backend.Service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import ec.edu.upse.backend.Entity.UserEntity;
@@ -16,79 +16,84 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final UserService userService;
-    private final JwtUtil jwtUtil;
-    private final SessionService sessionService;
+        private final UserService userService;
+        private final JwtUtil jwtUtil;
+        private final SessionService sessionService;
 
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+        private final PasswordEncoder encoder;
         private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
-    public AuthResponse login(LoginRequest req, HttpServletRequest request) {
+        public AuthResponse login(LoginRequest req, HttpServletRequest request) {
 
-        // Buscar usuario
-        UserEntity user = userService.findByIdentifier(req.getIdentifier())
-                .orElseThrow(() -> new RuntimeException("Usuario o contraseña incorrectos"));
+                // Buscar usuario
+                UserEntity user = userService.findByIdentifier(req.getIdentifier())
+                                .orElseThrow(() -> new RuntimeException("Usuario o contraseña incorrectos"));
 
-        boolean ok = user.getPassword().startsWith("$2a$")
-                || user.getPassword().startsWith("$2b$")
-                ? encoder.matches(req.getPassword(), user.getPassword())
-                : user.getPassword().equals(req.getPassword());
+                boolean ok = user.getPassword().startsWith("$2a$")
+                                || user.getPassword().startsWith("$2b$")
+                                                ? encoder.matches(req.getPassword(), user.getPassword())
+                                                : user.getPassword().equals(req.getPassword());
 
-        if (!ok) throw new RuntimeException("Usuario o contraseña incorrectos");
+                if (!ok)
+                        throw new RuntimeException("Usuario o contraseña incorrectos");
 
-        // Generar JWT
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+                // Generar JWT
+                String token = jwtUtil.generateToken(user.getId(), user.getUsername());
 
-                // Datos del request: obtener IP real del cliente usando cabeceras proxy si están presentes
+                // Datos del request: obtener IP real del cliente usando cabeceras proxy si
+                // están presentes
                 String ip = null;
                 String xff = request.getHeader("X-Forwarded-For");
                 if (xff != null && !xff.isBlank()) {
-                        // X-Forwarded-For puede contener múltiples IPs separadas por coma, la primera es el cliente
+                        // X-Forwarded-For puede contener múltiples IPs separadas por coma, la primera
+                        // es el cliente
                         ip = xff.split(",")[0].trim();
                 }
                 if (ip == null || ip.isBlank()) {
                         String xri = request.getHeader("X-Real-IP");
-                        if (xri != null && !xri.isBlank()) ip = xri.trim();
+                        if (xri != null && !xri.isBlank())
+                                ip = xri.trim();
                 }
-                if (ip == null || ip.isBlank()) ip = request.getRemoteAddr();
+                if (ip == null || ip.isBlank())
+                        ip = request.getRemoteAddr();
 
                 String browser = request.getHeader("User-Agent");
 
-        // Crear sesión y activar presencia
-        // Create a session without an expiration (persistent) — will be invalidated only on logout
-        var session = sessionService.createSession(
-                user.getId(),
-                token,
-                "WEB",
-                ip,
-                browser,
-                null
-        );
+                // Crear sesión y activar presencia
+                // Create a session without an expiration (persistent) — will be invalidated
+                // only on logout
+                var session = sessionService.createSession(
+                                user.getId(),
+                                token,
+                                "WEB",
+                                ip,
+                                browser,
+                                null);
 
-        // Devolver también la IP y la localización (para depuración y confirmación)
-        return new ec.edu.upse.backend.dto.AuthResponse(
-                token,
-                user.getId(),
-                user.getUsername(),
-                session.getIpAddress(),
-                session.getLocation()
-        );
-    }
+                // Devolver también la IP y la localización (para depuración y confirmación)
+                return new ec.edu.upse.backend.dto.AuthResponse(
+                                token,
+                                user.getId(),
+                                user.getUsername(),
+                                session.getIpAddress(),
+                                session.getLocation());
+        }
 
-    // Verificar credenciales sin crear sesión ni generar token
+        // Verificar credenciales sin crear sesión ni generar token
         public boolean verifyPassword(LoginRequest req) {
 
-        UserEntity user = userService.findByIdentifier(req.getIdentifier())
-                .orElseThrow(() -> new RuntimeException("Usuario o contraseña incorrectos"));
+                UserEntity user = userService.findByIdentifier(req.getIdentifier())
+                                .orElseThrow(() -> new RuntimeException("Usuario o contraseña incorrectos"));
 
-        boolean ok = user.getPassword().startsWith("$2a$")
-                || user.getPassword().startsWith("$2b$")
-                ? encoder.matches(req.getPassword(), user.getPassword())
-                : user.getPassword().equals(req.getPassword());
+                boolean ok = user.getPassword().startsWith("$2a$")
+                                || user.getPassword().startsWith("$2b$")
+                                                ? encoder.matches(req.getPassword(), user.getPassword())
+                                                : user.getPassword().equals(req.getPassword());
 
-        if (!ok) throw new RuntimeException("Usuario o contraseña incorrectos");
+                if (!ok)
+                        throw new RuntimeException("Usuario o contraseña incorrectos");
 
-        return true;
+                return true;
         }
 
         // Verificar credenciales por userId (no crea sesión)
@@ -102,7 +107,8 @@ public class AuthService {
 
                 boolean ok;
                 try {
-                        if (user.getPassword() != null && (user.getPassword().startsWith("$2a$") || user.getPassword().startsWith("$2b$"))) {
+                        if (user.getPassword() != null && (user.getPassword().startsWith("$2a$")
+                                        || user.getPassword().startsWith("$2b$"))) {
                                 ok = encoder.matches(password, user.getPassword());
                         } else {
                                 ok = user.getPassword() != null && user.getPassword().equals(password);

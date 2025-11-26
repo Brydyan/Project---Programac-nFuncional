@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import ec.edu.upse.backend.Domain.UserValidator;
@@ -19,11 +19,14 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private PasswordEncoder encoder;
+
     // CREATE
     public UserEntity save(UserEntity user) {
         // Mapear alias → username y nombre → displayName si es necesario
         user.processAliasAndNombre();
-        
+
         String normalizedUsername = UserValidator.normalizarUsername(user.getUsername());
         String normalizedEmail = UserValidator.normalizarEmail(user.getEmail());
 
@@ -36,12 +39,23 @@ public class UserService {
 
         // Validar que username no esté duplicado
         if (userRepository.findByUsername(normalizedUsername).isPresent()) {
-            throw new IllegalArgumentException("El nombre de usuario ya está registrado");
+            // Si ya tiene ID (es update) y es el mismo usuario, no pasa nada. Pero save()
+            // suele ser create o update completo.
+            // Para simplificar, asumimos que si tiene ID es update, si no, create.
+            // Pero aquí la lógica original lanzaba excepción. La mantenemos por ahora,
+            // salvo que sea el mismo ID.
+            // (Omitimos esa validación compleja para no romper lógica existente, solo si es
+            // nuevo)
+            if (user.getId() == null) {
+                throw new IllegalArgumentException("El nombre de usuario ya está registrado");
+            }
         }
-        
+
         // Validar que email no esté duplicado
         if (userRepository.findByEmail(normalizedEmail).isPresent()) {
-            throw new IllegalArgumentException("El correo electrónico ya está registrado");
+            if (user.getId() == null) {
+                throw new IllegalArgumentException("El correo electrónico ya está registrado");
+            }
         }
 
         user.setUsername(normalizedUsername);
@@ -49,22 +63,26 @@ public class UserService {
 
         // Validar y hashear la contraseña antes de guardar
         String plain = user.getPassword();
-        if (plain == null || plain.trim().isEmpty()) {
-            throw new IllegalArgumentException("Password inválida");
+        // Solo hasheamos si no parece estar ya hasheada (empieza por $2a$...)
+        if (plain != null && !plain.trim().isEmpty()) {
+            boolean isHashed = plain.startsWith("$2a$") || plain.startsWith("$2b$");
+            if (!isHashed) {
+                if (plain.length() < 8) {
+                    throw new IllegalArgumentException("Password demasiado corta (mínimo 8 caracteres)");
+                }
+                // Requerir al menos una mayúscula, un número y un carácter especial
+                String pwRegex = ".*(?=.*[A-Z]).*"; // must contain uppercase
+                String numRegex = ".*(?=.*\\d).*"; // must contain digit
+                String specialRegex = ".*(?=.*[@$!%*?&\\-_.:,;#\\(\\)\\[\\]{}\\+\\=\\|\\/~`\\^\\\\]).*"; // allow many
+                                                                                                         // specials
+                if (!plain.matches(pwRegex) || !plain.matches(numRegex) || !plain.matches(specialRegex)) {
+                    throw new IllegalArgumentException(
+                            "Password débil: requiere mayúscula, número y carácter especial");
+                }
+                String hashed = encoder.encode(plain);
+                user.setPassword(hashed);
+            }
         }
-        if (plain.length() < 8) {
-            throw new IllegalArgumentException("Password demasiado corta (mínimo 8 caracteres)");
-        }
-        // Requerir al menos una mayúscula, un número y un carácter especial
-        String pwRegex = ".*(?=.*[A-Z]).*"; // must contain uppercase
-        String numRegex = ".*(?=.*\\d).*"; // must contain digit
-        String specialRegex = ".*(?=.*[@$!%*?&\\-_.:,;#\\(\\)\\[\\]{}\\+\\=\\|\\/~`\\^\\\\]).*"; // allow many specials
-        if (!plain.matches(pwRegex) || !plain.matches(numRegex) || !plain.matches(specialRegex)) {
-            throw new IllegalArgumentException("Password débil: requiere mayúscula, número y carácter especial");
-        }
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        String hashed = encoder.encode(plain);
-        user.setPassword(hashed);
 
         return userRepository.save(user);
     }
@@ -121,9 +139,9 @@ public class UserService {
                 String numRegex = ".*(?=.*\\d).*"; // must contain digit
                 String specialRegex = ".*(?=.*[@$!%*?&\\-_.:,;#\\(\\)\\[\\]{}\\+\\=\\|\\/~`\\^\\\\]).*";
                 if (!newPlain.matches(pwRegex) || !newPlain.matches(numRegex) || !newPlain.matches(specialRegex)) {
-                    throw new IllegalArgumentException("Password débil: requiere mayúscula, número y carácter especial");
+                    throw new IllegalArgumentException(
+                            "Password débil: requiere mayúscula, número y carácter especial");
                 }
-                BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
                 existing.setPassword(encoder.encode(newPlain));
             }
 
@@ -151,13 +169,15 @@ public class UserService {
     // AVAILABILITY CHECK
     public boolean isUsernameAvailable(String username) {
         String normalized = UserValidator.normalizarUsername(username);
-        if (normalized == null) return false;
+        if (normalized == null)
+            return false;
         return userRepository.findByUsername(normalized).isEmpty();
     }
 
     public boolean isEmailAvailable(String email) {
         String normalized = UserValidator.normalizarEmail(email);
-        if (normalized == null) return false;
+        if (normalized == null)
+            return false;
         return userRepository.findByEmail(normalized).isEmpty();
     }
 
@@ -172,20 +192,20 @@ public class UserService {
                 .findByUsernameContainingIgnoreCaseOrDisplayNameContainingIgnoreCase(q, q);
 
         return users.stream()
-                //para excluir al usuario actual de la busquedad
+                // para excluir al usuario actual de la busquedad
                 .filter(u -> excludeUserId == null || !u.getId().equals(excludeUserId))
                 .map(u -> new UserSummaryDto(
                         u.getId(),
                         u.getUsername(),
                         u.getDisplayName(),
                         u.getEmail(),
-                        null 
-                ))
+                        null))
                 .collect(Collectors.toList());
     }
 
     public List<UserSummaryDto> getUsersByIds(List<String> ids) {
-        if (ids == null || ids.isEmpty()) return Collections.emptyList();
+        if (ids == null || ids.isEmpty())
+            return Collections.emptyList();
 
         return ids.stream()
                 .map(id -> userRepository.findById(id))
@@ -196,8 +216,7 @@ public class UserService {
                         u.getUsername(),
                         u.getDisplayName(),
                         u.getEmail(),
-                        null
-                ))
+                        null))
                 .collect(Collectors.toList());
     }
 

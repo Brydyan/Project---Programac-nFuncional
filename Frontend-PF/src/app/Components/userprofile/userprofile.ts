@@ -87,12 +87,24 @@ export class UserProfileComponent implements OnInit {
 
   // ===== Edición =====
 
-  enableEditProfile() {
-    this.editingProfile = true;
+  toggleEditProfile() {
+    if (this.editingProfile) {
+      this.cancelEdits();
+    } else {
+      this.editingProfile = true;
+      // Si abrimos perfil, cerramos contacto para evitar caos
+      this.editingContact = false; 
+    }
   }
 
-  enableEditContact() {
-    this.editingContact = true;
+  toggleEditContact() {
+    if (this.editingContact) {
+      this.cancelEdits();
+    } else {
+      this.editingContact = true;
+      // Si abrimos contacto, cerramos perfil
+      this.editingProfile = false;
+    }
   }
 
   onAvatarSelected(event: Event) {

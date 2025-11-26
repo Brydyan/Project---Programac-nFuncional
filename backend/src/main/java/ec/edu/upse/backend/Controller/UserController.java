@@ -72,15 +72,14 @@ public class UserController {
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
-
     @GetMapping("/search")
     public ResponseEntity<List<UserSummaryDto>> searchUser(
-        @RequestParam("q") String query, 
-        @RequestParam(value = "excludeId", required = false) String excludeId){
-            List<UserSummaryDto> result = userService.searchUsers(query, excludeId);
-            return ResponseEntity.ok(result);
+            @RequestParam("q") String query,
+            @RequestParam(value = "excludeId", required = false) String excludeId) {
+        List<UserSummaryDto> result = userService.searchUsers(query, excludeId);
+        return ResponseEntity.ok(result);
     }
-    
+
     @GetMapping("/by-ids")
     public ResponseEntity<List<UserSummaryDto>> getUsersByIds(@RequestParam("ids") String idsCsv) {
         List<String> ids = Arrays.asList(idsCsv.split(","));
@@ -88,36 +87,38 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
-  // ========= PERFIL =========
+    // ========= PERFIL =========
     @GetMapping("/profile/me")
     public ResponseEntity<UserProfileDto> getMyProfile(Authentication auth) {
         String authUserId = auth.getName(); // aquí asumes que el subject del JWT es el ID del user
         return userService.getUserById(authUserId)
-            .map(this::toProfileDto)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+                .map(this::toProfileDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/profile/me")
     public ResponseEntity<UserProfileDto> updateMyProfile(
             @RequestBody UserProfileDto dto,
-            Authentication auth
-    ) {
+            Authentication auth) {
         String authUserId = auth.getName();
 
         return userService.getUserById(authUserId)
-            .map(user -> {
-                user.setDisplayName(dto.getDisplayName());
-                user.setBio(dto.getBio());
-                user.setStatusMessage(dto.getStatusMessage());
-                // user.setAvatarUrl(dto.getAvatarUrl());
+                .map(user -> {
+                    if (dto.getDisplayName() != null)
+                        user.setDisplayName(dto.getDisplayName());
+                    if (dto.getBio() != null)
+                        user.setBio(dto.getBio());
+                    if (dto.getStatusMessage() != null)
+                        user.setStatusMessage(dto.getStatusMessage());
+                    if (dto.getAvatarUrl() != null)
+                        user.setAvatarUrl(dto.getAvatarUrl());
 
-                UserEntity saved = userService.save(user);
-                return ResponseEntity.ok(toProfileDto(saved));
-            })
-            .orElse(ResponseEntity.notFound().build());
+                    UserEntity saved = userService.save(user);
+                    return ResponseEntity.ok(toProfileDto(saved));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
-
 
     // ========= SETTINGS =========
 
@@ -125,34 +126,40 @@ public class UserController {
     public ResponseEntity<UserSettingsDto> getMySettings(Authentication auth) {
         String authUserId = auth.getName();
         return userService.getUserById(authUserId)
-            .map(this::toSettingsDto)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
+                .map(this::toSettingsDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/settings/me")
     public ResponseEntity<UserSettingsDto> updateMySettings(
             @RequestBody UserSettingsDto dto,
-            Authentication auth
-    ) {
-    String authUserId = auth.getName();
+            Authentication auth) {
+        String authUserId = auth.getName();
 
-    return userService.getUserById(authUserId)
-        .map(user -> {
-                user.setNotificationsActivate(dto.getNotificationsActivate());
-                user.setNotificationsSound(dto.getNotificationsSound());
-                user.setNotificationsDesktop(dto.getNotificationsDesktop());
+        return userService.getUserById(authUserId)
+                .map(user -> {
+                    if (dto.getNotificationsActivate() != null)
+                        user.setNotificationsActivate(dto.getNotificationsActivate());
+                    if (dto.getNotificationsSound() != null)
+                        user.setNotificationsSound(dto.getNotificationsSound());
+                    if (dto.getNotificationsDesktop() != null)
+                        user.setNotificationsDesktop(dto.getNotificationsDesktop());
 
-                user.setDarkMode(dto.getDarkMode());
-                user.setFontSize(dto.getFontSize());
+                    if (dto.getDarkMode() != null)
+                        user.setDarkMode(dto.getDarkMode());
+                    if (dto.getFontSize() != null)
+                        user.setFontSize(dto.getFontSize());
 
-                user.setInterfaceLanguage(dto.getInterfaceLanguage());
-                user.setTimezone(dto.getTimezone());
+                    if (dto.getInterfaceLanguage() != null)
+                        user.setInterfaceLanguage(dto.getInterfaceLanguage());
+                    if (dto.getTimezone() != null)
+                        user.setTimezone(dto.getTimezone());
 
-                UserEntity saved = userService.save(user);
-                return ResponseEntity.ok(toSettingsDto(saved));
-            })
-            .orElse(ResponseEntity.notFound().build());
+                    UserEntity saved = userService.save(user);
+                    return ResponseEntity.ok(toSettingsDto(saved));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     // ========= MAPPERS PRIVADOS =========
@@ -182,4 +189,3 @@ public class UserController {
         return dto;
     }
 }
-
