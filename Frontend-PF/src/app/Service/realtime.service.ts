@@ -3,6 +3,7 @@ import { Client, IMessage } from '@stomp/stompjs';
 import { Observable, ReplaySubject } from 'rxjs';
 import { filter, switchMap } from 'rxjs/operators';
 import { ChatMessage } from './Message.service';
+import { ChannelsMsgModel } from '../Model/channels-msg-model';
 
 @Injectable({ providedIn: 'root' })
 export class RealtimeService {
@@ -95,4 +96,26 @@ subscribeToChannelEvents(userId: string): Observable<any> {
       )
     );
   }
+
+//  Suscripción a mensajes de un canal
+  subscribeToChannelMessages(channelId: string): Observable<ChannelsMsgModel> {
+    return this.waitUntilConnected().pipe(
+      switchMap(
+        () =>
+          new Observable<ChannelsMsgModel>((observer) => {
+            const sub = this.client.subscribe(
+              `/topic/channel.${channelId}`,
+              (msg: IMessage) => {
+                const payload = JSON.parse(msg.body) as ChannelsMsgModel;
+                console.log('[WS] mensaje canal recibido:', payload);
+                observer.next(payload);
+              }
+            );
+
+            return () => sub.unsubscribe();
+          })
+      )
+    );
+  }
+
 }
