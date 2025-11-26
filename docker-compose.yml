@@ -1,5 +1,5 @@
 services:
-  
+
   backend:
     build: ./backend
     container_name: mi_backend
@@ -8,13 +8,15 @@ services:
     environment:
       # Usa SOLO la que el backend realmente va a leer
       - SPRING_DATA_MONGODB_URI=mongodb://root:mi_clave_secreta@mongodb:27017/YARGFlow?authSource=admin
-      
+
       # Redis: el host TIENE que ser el nombre del servicio: "redis"
       - REDIS_HOST=redis
       - REDIS_PORT=6379
 
       - JWT_SECRET=pon_aqui_una_clave_larga_y_unica
       - JWT_EXPIRATION_HOURS=24
+    volumes:
+      - ./backend/secrets:/app/secrets:ro
     depends_on:
       - mongodb
       - redis
@@ -33,7 +35,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./backend/mongo-data:/data/db 
+      - ./backend/mongo-data:/data/db
     environment:
       - MONGO_INITDB_ROOT_USERNAME=root
       - MONGO_INITDB_ROOT_PASSWORD=mi_clave_secreta

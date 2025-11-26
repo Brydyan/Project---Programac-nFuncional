@@ -22,13 +22,13 @@ import ec.edu.upse.backend.dto.ConversationSummaryDto;
 @Service
 public class ConversationService {
 
-    @Autowired 
+    @Autowired
     private ContactRepository contactRepository;
 
-    @Autowired 
+    @Autowired
     private MessageRepository messageRepository;
 
-    @Autowired 
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
@@ -40,69 +40,73 @@ public class ConversationService {
 
         Map<String, ContactEntity> relations = new HashMap<>();
 
-
-       for(ContactEntity c : asOwner){
-            if("accepted".equalsIgnoreCase(c.getState())){
+        for (ContactEntity c : asOwner) {
+            if ("accepted".equalsIgnoreCase(c.getState())) {
                 relations.put(c.getContactId(), c);
             }
-       }
-    
-       for(ContactEntity c: asContact){
-            if("accepted".equalsIgnoreCase(c.getState())){
+        }
+
+        for (ContactEntity c : asContact) {
+            if ("accepted".equalsIgnoreCase(c.getState())) {
                 relations.put(c.getUserId(), c);
             }
-       }
-       // Para cada contacto, buscar el último mensaje (en ambos sentidos)
-       List<ConversationSummaryDto> result = new ArrayList<>();
-       
-       for(String otherUserId : relations.keySet()){
+        }
+        // Para cada contacto, buscar el último mensaje (en ambos sentidos)
+        List<ConversationSummaryDto> result = new ArrayList<>();
 
-        MessageEntity last1 = messageRepository
+        for (String otherUserId : relations.keySet()) {
+
+            MessageEntity last1 = messageRepository
                     .findTopBySenderIdAndReceiverIdOrderByTimestampDesc(userId, otherUserId);
 
-
-        MessageEntity last2 = messageRepository
+            MessageEntity last2 = messageRepository
                     .findTopBySenderIdAndReceiverIdOrderByTimestampDesc(otherUserId, userId);
 
-        MessageEntity last = pickLatest(last1, last2);
+            MessageEntity last = pickLatest(last1, last2);
 
-        String lastMeesageText = last != null ? last.getContent() : "";
-        java.time.Instant lastTime = last != null ? last.getTimestamp() : null;
-        //Buscar datos del usuario para mostrar nombre
-        Optional<UserEntity> otherUserOpt = userRepository.findById(otherUserId);
-        String displayName = otherUserOpt
+            String lastMeesageText = last != null ? last.getContent() : "";
+            java.time.Instant lastTime = last != null ? last.getTimestamp() : null;
+            // Buscar datos del usuario para mostrar nombre
+            Optional<UserEntity> otherUserOpt = userRepository.findById(otherUserId);
+            String displayName = otherUserOpt
                     .map(u -> u.getDisplayName() != null && !u.getDisplayName().isEmpty()
                             ? u.getDisplayName()
                             : u.getUsername())
-                    .orElse("Usuario " + otherUserId); 
+                    .orElse("Usuario " + otherUserId);
 
+            String avatarUrl = otherUserOpt
+                    .map(UserEntity::getPhotoUrl)
+                    .orElse("");
 
+            String convId = buildConversationId(userId, otherUserId);
+            long unread = 0L;
+            try {
+                unread = messageService.getUnreadCountForConversation(convId, userId);
+            } catch (Exception e) {
+                unread = 0L;
+            }
+            int unreadCount = (int) unread;
 
-        String avatarUrl = "";
-
-        String convId = buildConversationId(userId, otherUserId);
-        long unread = 0L;
-        try { unread = messageService.getUnreadCountForConversation(convId, userId); } catch(Exception e) { unread = 0L; }
-        int unreadCount = (int) unread;
-
-        ConversationSummaryDto dto = new ConversationSummaryDto(
-                otherUserId,
-                displayName,
-                lastMeesageText,
-                lastTime,
-                avatarUrl,
-                unreadCount
-        );
-        result.add(dto);
-       }
-       return result.stream()
-            .sorted(Comparator.comparing(ConversationSummaryDto :: getLastTime,
-                    Comparator.nullsLast(Comparator.naturalOrder())).reversed())
-                    .collect(Collectors.toList());
+            ConversationSummaryDto dto = new ConversationSummaryDto(
+                    otherUserId,
+                    displayName,
+                    lastMeesageText,
+                    lastTime,
+                    avatarUrl,
+                    unreadCount);
+            result.add(dto);
+        }
+        return result.stream()
+                .sorted(Comparator.comparing(ConversationSummaryDto::getLastTime,
+                        Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                .collect(Collectors.toList());
     }
+
     private MessageEntity pickLatest(MessageEntity a, MessageEntity b) {
-        if (a == null) return b;
-        if (b == null) return a;
+        if (a == null)
+            return b;
+        if (b == null)
+            return a;
         return a.getTimestamp().isAfter(b.getTimestamp()) ? a : b;
     }
 

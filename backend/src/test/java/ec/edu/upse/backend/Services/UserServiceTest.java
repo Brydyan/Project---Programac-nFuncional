@@ -8,7 +8,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,7 +22,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import ec.edu.upse.backend.Entity.UserEntity;
@@ -302,14 +300,40 @@ class UserServiceTest {
 
         boolean result = userService.deleteUser(id);
 
+        assertTrue(result);
+        verify(userRepository).existsById(id);
+        verify(userRepository).deleteById(id);
+    }
+
+    @Test
+    void deleteUser_cuandoNoExiste_noBorraYRetornaFalse() {
+        String id = "99";
+        when(userRepository.existsById(id)).thenReturn(false);
+
+        boolean result = userService.deleteUser(id);
+
+        assertFalse(result);
+        verify(userRepository).existsById(id);
+        verify(userRepository, never()).deleteById(anyString());
+    }
+
+    @Test
+    void updateUserPhoto_cuandoExiste_debeActualizarYRetornarUsuario() {
+        String id = "10";
+        UserEntity existing = new UserEntity();
+        existing.setId(id);
         existing.setUsername("mario");
+
         when(userRepository.findById(id)).thenReturn(Optional.of(existing));
         when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
         UserEntity result = userService.updateUserPhoto(id, "https://firebase.storage/avatar.jpg",
                 "users/10/avatar.jpg");
+
         assertNotNull(result);
         assertEquals("https://firebase.storage/avatar.jpg", result.getPhotoUrl());
         assertEquals("users/10/avatar.jpg", result.getPhotoPath());
+
         verify(userRepository).findById(id);
         verify(userRepository).save(any(UserEntity.class));
     }

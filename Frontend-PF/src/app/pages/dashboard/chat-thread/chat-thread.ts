@@ -29,15 +29,16 @@ export class ChatThread implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
 
-  otherUserId!: string;         
+  otherUserId!: string;
   profilePreview: UserSearchResult | null = null;
   showProfilePreview = false;
   previewLoading = false;
- 
+
   contactId!: string;
   currentUserId!: string;
 
   contactDisplayName: string | null = null;
+  contactAvatarUrl: string | null = null;
   messages: ChatMessage[] = [];
   newMessage = '';
   loading = true;
@@ -49,7 +50,7 @@ export class ChatThread implements OnInit, OnDestroy {
     return 'Fuera de línea';
   }
 
-  
+
 
   private routeSub?: Subscription;
   private realtimeSub?: Subscription;
@@ -72,8 +73,8 @@ export class ChatThread implements OnInit, OnDestroy {
       this.messages = [];
       this.loading = true;
       this.cdr.detectChanges();
-      
-      
+
+
       this.loadContact();
       this.initChat();
       // Registrar handlers globales de presencia (se añaden cuando el componente se crea)
@@ -106,10 +107,12 @@ export class ChatThread implements OnInit, OnDestroy {
     this.userService.getUserById(this.contactId).subscribe({
       next: (user) => {
         this.contactDisplayName = user.displayName || '@' + user.username;
+        this.contactAvatarUrl = user.avatarUrl || null;
         this.cdr.detectChanges();
       },
       error: () => {
         this.contactDisplayName = null;
+        this.contactAvatarUrl = null;
         this.cdr.detectChanges();
       },
     });
@@ -307,7 +310,7 @@ export class ChatThread implements OnInit, OnDestroy {
     const sid = session?.sessionId;
     if (!sid) return console.warn('[Presence debug] no sessionId');
     console.debug('[Presence debug] forcing markOnline for', sid);
-    this.sessionService.markOnline(sid).subscribe({ next: () => console.log('markOnline debug ok') , error: (e) => console.error(e) });
+    this.sessionService.markOnline(sid).subscribe({ next: () => console.log('markOnline debug ok'), error: (e) => console.error(e) });
   }
 
   markPresenceInactiveForDebug(): void {
@@ -315,7 +318,7 @@ export class ChatThread implements OnInit, OnDestroy {
     const sid = session?.sessionId;
     if (!sid) return console.warn('[Presence debug] no sessionId');
     console.debug('[Presence debug] forcing markInactive for', sid);
-    this.sessionService.markInactive(sid).subscribe({ next: () => console.log('markInactive debug ok') , error: (e) => console.error(e) });
+    this.sessionService.markInactive(sid).subscribe({ next: () => console.log('markInactive debug ok'), error: (e) => console.error(e) });
   }
 
   private stopInactivityTimer(): void {
@@ -388,10 +391,12 @@ export class ChatThread implements OnInit, OnDestroy {
           // Marcar la conversación como leída para el usuario actual
           try {
             const convId = this.buildConversationId(this.currentUserId, this.contactId);
-            this.messageService.markConversationRead(convId, this.currentUserId).subscribe({ next: () => {
-              // notificar a la lista de conversaciones que refresque contadores
-              this.convEvents.notifyRefresh();
-            }, error: (e) => console.error('markConversationRead error', e) });
+            this.messageService.markConversationRead(convId, this.currentUserId).subscribe({
+              next: () => {
+                // notificar a la lista de conversaciones que refresque contadores
+                this.convEvents.notifyRefresh();
+              }, error: (e) => console.error('markConversationRead error', e)
+            });
           } catch (e) { /* ignore */ }
         },
         error: (err) => {
@@ -443,7 +448,7 @@ export class ChatThread implements OnInit, OnDestroy {
       }
     });
   }
- 
+
   openProfilePreview() {
     if (!this.contactId) return;
 

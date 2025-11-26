@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../../Service/session.service';
 import { ChannelsMsgModel } from '../../../Model/channels-msg-model';
 import { MemberModel } from '../../../Model/member-model';
-import { Subscription } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
+import { startWith, switchMap } from 'rxjs/operators';
 import { ChannelsMsgService } from '../../../Service/channels-msg.service';
 import { ChannelsService } from '../../../Service/channels.service';
 import { RealtimeService } from '../../../Service/realtime.service';
 import { ActivatedRoute } from '@angular/router';
 import { UserService } from '../../../Service/user.service';
+import { PresenceService } from '../../../Service/presence.service';
 
 @Component({
   selector: 'app-channels-thread',
@@ -24,6 +26,8 @@ export class ChannelsThread implements OnInit, OnDestroy {
   private wsChannelSub?: Subscription;
   //WS para eventos de miembros (online/offline)
   private wsEventsSub?: Subscription;
+  // Polling para presencia
+  private presenceSub?: Subscription;
 
   private sessionService = inject(SessionService);
   private cdr = inject(ChangeDetectorRef);
@@ -46,7 +50,8 @@ export class ChannelsThread implements OnInit, OnDestroy {
     private realtime: RealtimeService,
     private route: ActivatedRoute,
     private userService: UserService,
-  ) {}
+    private presenceService: PresenceService,
+  ) { }
 
   ngOnInit(): void {
     // capturar id del canal desde la URL
@@ -59,6 +64,7 @@ export class ChannelsThread implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.wsChannelSub?.unsubscribe();
     this.wsEventsSub?.unsubscribe();
+    this.presenceSub?.unsubscribe();
   }
 
   private initSession(): void {
@@ -118,15 +124,31 @@ export class ChannelsThread implements OnInit, OnDestroy {
       // --- Llamada optimizada para obtener usernames reales ---
       if (channel.members.length > 0) {
         this.userService.getUsersByIds(channel.members).subscribe(users => {
-          // Reemplazar placeholders con los nombres reales
+          // Reemplazar placeholders con los nombres reales y avatares
           this.membersInfo = this.membersInfo.map(m => {
             const u = users.find(user => user.id === m.userId);
             return {
               ...m,
-              username: u?.username || m.username
+              username: u?.username || m.username,
+              avatarUrl: u?.avatarUrl || undefined
             };
           });
-          this.cdr.detectChanges(); // actualizar la vista
+
+          // Iniciar polling de presencia cada 5 segundos
+          this.presenceSub?.unsubscribe(); // limpiar suscripción anterior si existe
+          this.presenceSub = interval(5000)
+            .pipe(
+              startWith(0), // ejecutar inmediatamente la primera vez
+              switchMap(() => this.presenceService.getBulkPresence(channel.members))
+            )
+            .subscribe((presenceMap: Record<string, string>) => {
+              // Actualizar solo la propiedad 'online', preservando username y avatarUrl
+              this.membersInfo.forEach(m => {
+                m.online = presenceMap[m.userId] === 'ONLINE';
+              });
+              this.updateOnlineMembers();
+              this.cdr.detectChanges();
+            });
         });
       }
     });

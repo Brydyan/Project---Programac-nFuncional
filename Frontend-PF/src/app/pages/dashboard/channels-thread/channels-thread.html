@@ -35,7 +35,9 @@
       <h3>Miembros en línea ({{ onlineMembers.length }})</h3>
 
       <div *ngFor="let m of membersInfo" class="member-item">
-        <div class="avatar"></div>
+        <div class="avatar">
+          <img [src]="m.avatarUrl || 'https://i.pravatar.cc/50?u=' + m.userId" [alt]="m.username" />
+        </div>
         <span class="member-name">{{ m.username }}</span>
         <span class="online-dot" [class.online]="m.online"></span>
       </div>

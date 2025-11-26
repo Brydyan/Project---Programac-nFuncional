@@ -1,6 +1,8 @@
 package ec.edu.upse.backend.Controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -60,10 +62,12 @@ public class PresenceController {
         }
 
         boolean anyOnline = sessions.values().stream().anyMatch(v -> "ONLINE".equalsIgnoreCase(v));
-        if (anyOnline) return ResponseEntity.ok("ONLINE");
+        if (anyOnline)
+            return ResponseEntity.ok("ONLINE");
 
         boolean anyInactive = sessions.values().stream().anyMatch(v -> "INACTIVE".equalsIgnoreCase(v));
-        if (anyInactive) return ResponseEntity.ok("INACTIVE");
+        if (anyInactive)
+            return ResponseEntity.ok("INACTIVE");
 
         return ResponseEntity.ok("OFFLINE");
     }
@@ -74,6 +78,31 @@ public class PresenceController {
             @PathVariable String newStatus) {
         PresenceEntity updated = presenceService.updateStatus(id, newStatus);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    }
+
+    // Obtener presencia de múltiples usuarios a la vez
+    @PostMapping("/realtime/bulk")
+    public ResponseEntity<Map<String, String>> getBulkRealtimeStatus(@RequestBody List<String> userIds) {
+        Map<String, String> result = new HashMap<>();
+
+        for (String userId : userIds) {
+            var sessions = realtimePresence.getUserSessionsStatus(userId);
+            if (sessions == null || sessions.isEmpty()) {
+                result.put(userId, "OFFLINE");
+                continue;
+            }
+
+            boolean anyOnline = sessions.values().stream().anyMatch(v -> "ONLINE".equalsIgnoreCase(v));
+            if (anyOnline) {
+                result.put(userId, "ONLINE");
+                continue;
+            }
+
+            boolean anyInactive = sessions.values().stream().anyMatch(v -> "INACTIVE".equalsIgnoreCase(v));
+            result.put(userId, anyInactive ? "INACTIVE" : "OFFLINE");
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/{id}")

@@ -209,7 +209,7 @@ public class UserService {
                         u.getUsername(),
                         u.getDisplayName(),
                         u.getEmail(),
-                        null))
+                        u.getPhotoUrl()))
                 .collect(Collectors.toList());
     }
 
@@ -231,4 +231,5 @@ public class UserService {
         // logger.warn("updateUserPhoto: user not found for userId={}", userId);
         return null;
     }
+
 }

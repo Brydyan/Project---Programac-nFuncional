@@ -20,7 +20,7 @@ export class UserService {
   private api = '/app/v1/user';
 
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   searchUsers(term: string, excludeId?: string): Observable<UserSearchResult[]> {
     let params = new HttpParams().set('q', term);
@@ -57,6 +57,12 @@ export class UserService {
 
   updateSettings(userId: string, settings: UserSettingsDto) {
     return this.http.put<UserSettingsDto>(`${this.api}/settings/me`, settings);
+  }
+
+  uploadPhoto(userId: string, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.api}/${userId}/photo-upload`, formData);
   }
 
 

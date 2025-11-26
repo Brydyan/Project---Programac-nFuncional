@@ -4,24 +4,18 @@
   <header class="chat-header">
     <div class="chat-header-left">
       <div class="avatar" (click)="openProfilePreview()">
-        <img
-          src="https://i.pravatar.cc/100?u={{ contactId }}"
-          alt="Avatar"
-        />
+        <img [src]="contactAvatarUrl || 'https://i.pravatar.cc/100?u=' + contactId" alt="Avatar" />
       </div>
       <div class="contact-info" (click)="openProfilePreview()">
         <!-- aquí usamos el alias/nombre real -->
         <div class="contact-name">
           {{ contactDisplayName || 'Chat 1 a 1' }}
         </div>
-        <div
-          class="contact-status"
-          [ngClass]="{
+        <div class="contact-status" [ngClass]="{
             'online': contactPresence === 'ONLINE',
             'inactive': contactPresence === 'INACTIVE',
             'offline': contactPresence === 'OFFLINE'
-          }"
-        >
+          }">
           {{ contactStatusLabel }}
         </div>
       </div>
@@ -43,10 +37,7 @@
     </div>
 
     <!-- sin mensajes (después de cargar) -->
-    <div
-      *ngIf="!loading && messages.length === 0"
-      class="empty-state"
-    >
+    <div *ngIf="!loading && messages.length === 0" class="empty-state">
       <div class="empty-title">Empieza la conversación</div>
       <div class="empty-subtitle">
         Envía el primer mensaje para iniciar el chat.
@@ -54,21 +45,14 @@
     </div>
 
     <!-- lista de mensajes -->
-    <div
-      *ngFor="let msg of messages"
-      class="message-row"
-      [ngClass]="{
+    <div *ngFor="let msg of messages" class="message-row" [ngClass]="{
         'message-row--right': isMine(msg),
         'message-row--left': !isMine(msg)
-      }"
-    >
-      <div
-        class="message-bubble"
-        [ngClass]="{
+      }">
+      <div class="message-bubble" [ngClass]="{
           'message-bubble--right': isMine(msg),
           'message-bubble--left': !isMine(msg)
-        }"
-      >
+        }">
         <p>{{ msg.content }}</p>
         <span class="message-time">
           {{ msg.timestamp | date:'shortTime' }}
@@ -82,17 +66,9 @@
   <footer class="chat-input-area">
     <div class="input-wrapper">
       <button class="attach-btn" type="button">📎</button>
-      <input
-        type="text"
-        placeholder="Escribe tu mensaje aquí..."
-        [(ngModel)]="newMessage"
-        (keyup.enter)="sendMessage()"     
-      />
-      <button
-        class="send-btn"
-        type="button"
-        (click)="sendMessage()"          
-      >
+      <input type="text" placeholder="Escribe tu mensaje aquí..." [(ngModel)]="newMessage"
+        (keyup.enter)="sendMessage()" />
+      <button class="send-btn" type="button" (click)="sendMessage()">
         ➤
       </button>
     </div>
@@ -112,11 +88,7 @@
 
     <ng-container *ngIf="!previewLoading && profilePreview as p; else loadingPreviewTpl">
       <div class="preview-avatar-wrapper">
-        <img
-          [src]="p.avatarUrl || 'https://i.pravatar.cc/150?u=' + p.id"
-          alt="Avatar"
-          class="preview-avatar"
-        />
+        <img [src]="p.avatarUrl || 'https://i.pravatar.cc/150?u=' + p.id" alt="Avatar" class="preview-avatar" />
       </div>
 
       <h3 class="preview-name">{{ p.displayName || p.username }}</h3>

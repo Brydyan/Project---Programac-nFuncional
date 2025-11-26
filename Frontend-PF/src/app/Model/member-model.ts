@@ -3,4 +3,5 @@ export interface MemberModel {
     userId: string;     // corresponde al ID real del usuario
     username: string;   // nombre de usuario
     online?: boolean;   // opcional, para indicar si está activo
+    avatarUrl?: string; // opcional, URL de la foto de perfil
 }

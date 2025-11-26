@@ -5,6 +5,7 @@ import { SessionService } from '../../Service/session.service';
 import { UserProfile } from '../../Model/user-profile-model';
 import { UserService } from '../../Service/user.service';
 import { FormsModule } from '@angular/forms';
+import { UserProfileEventsService } from '../../Service/user-profile-events.service';
 
 @Component({
   selector: 'app-userprofile',
@@ -33,7 +34,8 @@ export class UserProfileComponent implements OnInit {
     private router: Router,
     private sessionService: SessionService,
     private userService: UserService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private profileEvents: UserProfileEventsService
   ) { }
 
   ngOnInit(): void {
@@ -135,28 +137,51 @@ export class UserProfileComponent implements OnInit {
   saveProfile() {
     if (!this.user) return;
 
-    // de momento solo enviamos avatarUrl como está (mañana tu compañero mete Firebase)
-    const payload: UserProfile = {
-      ...this.user,
-      avatarUrl: this.avatarPreview || this.user.avatarUrl || ''
+    const performUpdate = () => {
+      const payload: UserProfile = {
+        ...this.user!,
+        avatarUrl: this.user!.avatarUrl || ''
+      };
+
+      this.userService.updateProfile(this.user!.id, payload).subscribe({
+        next: (updated) => {
+          this.user = updated;
+          this.originalUser = { ...updated };
+          this.avatarPreview = updated.avatarUrl || null;
+          this.editingProfile = false;
+          this.editingContact = false;
+          this.selectedAvatarFile = null;
+
+          // Notificar a otros componentes que el perfil fue actualizado
+          this.profileEvents.notifyProfileUpdate(this.user!.id);
+
+          this.cdr.detectChanges();
+          alert('Perfil actualizado correctamente');
+        },
+        error: (err) => {
+          console.error('Error actualizando perfil', err);
+          alert('No se pudo actualizar el perfil');
+        }
+      });
     };
 
-    this.userService.updateProfile(this.user.id, payload).subscribe({
-      next: (updated) => {
-        this.user = updated;
-        this.originalUser = { ...updated };
-        this.avatarPreview = updated.avatarUrl || null;
-        this.editingProfile = false;
-        this.editingContact = false;
-        this.selectedAvatarFile = null;
-        this.cdr.detectChanges();
-        alert('Perfil actualizado correctamente');
-      },
-      error: (err) => {
-        console.error('Error actualizando perfil', err);
-        alert('No se pudo actualizar el perfil');
-      }
-    });
+    if (this.selectedAvatarFile) {
+      this.userService.uploadPhoto(this.user.id, this.selectedAvatarFile).subscribe({
+        next: (updatedUser) => {
+          // El backend retorna UserEntity con photoUrl
+          if (updatedUser.photoUrl) {
+            this.user!.avatarUrl = updatedUser.photoUrl;
+          }
+          performUpdate();
+        },
+        error: (err) => {
+          console.error('Error uploading photo', err);
+          alert('Error al subir la foto');
+        }
+      });
+    } else {
+      performUpdate();
+    }
   }
 
   onEditPreferences() {
