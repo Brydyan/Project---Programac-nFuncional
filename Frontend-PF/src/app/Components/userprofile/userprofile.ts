@@ -14,7 +14,7 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./userprofile.scss']
 })
 export class UserProfileComponent implements OnInit {
-  
+
   user: UserProfile | null = null;
   originalUser: UserProfile | null = null;
 
@@ -34,7 +34,7 @@ export class UserProfileComponent implements OnInit {
     private sessionService: SessionService,
     private userService: UserService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const token = localStorage.getItem('token');
@@ -93,7 +93,7 @@ export class UserProfileComponent implements OnInit {
     } else {
       this.editingProfile = true;
       // Si abrimos perfil, cerramos contacto para evitar caos
-      this.editingContact = false; 
+      this.editingContact = false;
     }
   }
 
@@ -160,7 +160,7 @@ export class UserProfileComponent implements OnInit {
   }
 
   onEditPreferences() {
-  this.router.navigate(['/dashboard/settings']);
-}
+    this.router.navigate(['/dashboard/settings']);
+  }
 
 }

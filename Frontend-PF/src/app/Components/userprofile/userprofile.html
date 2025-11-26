@@ -13,23 +13,15 @@
     <div class="profile-card">
       <div class="profile-avatar-section">
         <div class="avatar-wrapper">
-          <img 
-            [src]="avatarPreview || u.avatarUrl || 'https://i.pravatar.cc/150?u=' + u.id" 
-            alt="Avatar de usuario"
-            class="profile-avatar"
-          />
+          <img [src]="avatarPreview || u.avatarUrl || 'https://i.pravatar.cc/150?u=' + u.id" alt="Avatar de usuario"
+            class="profile-avatar" />
 
           <span class="status-indicator active"></span>
 
           <!-- input de archivo solo cuando estás editando -->
           <label *ngIf="editingProfile" class="avatar-edit-label">
             Cambiar foto
-            <input
-              type="file"
-              accept="image/*"
-              (change)="onAvatarSelected($event)"
-              hidden
-            />
+            <input type="file" accept="image/*" (change)="onAvatarSelected($event)" hidden />
           </label>
         </div>
 
@@ -39,12 +31,7 @@
           </h3>
 
           <ng-template #editNameTpl>
-            <input
-              type="text"
-              [(ngModel)]="u.displayName"
-              class="profile-name-input"
-              placeholder="Nombre visible"
-            />
+            <input type="text" [(ngModel)]="u.displayName" class="profile-name-input" placeholder="Nombre visible" />
           </ng-template>
 
           <span class="status-badge" *ngIf="!editingProfile; else editStatusTpl">
@@ -53,12 +40,8 @@
           </span>
 
           <ng-template #editStatusTpl>
-            <input
-              type="text"
-              [(ngModel)]="u.statusMessage"
-              class="status-input"
-              placeholder="Estado (Disponible, Ocupado, etc.)"
-            />
+            <input type="text" [(ngModel)]="u.statusMessage" class="status-input"
+              placeholder="Estado (Disponible, Ocupado, etc.)" />
           </ng-template>
         </div>
       </div>
@@ -71,12 +54,7 @@
         </p>
 
         <ng-template #editBioTpl>
-          <textarea
-            [(ngModel)]="u.bio"
-            rows="3"
-            class="bio-textarea"
-            placeholder="Escribe algo sobre ti..."
-          ></textarea>
+          <textarea [(ngModel)]="u.bio" rows="3" class="bio-textarea" placeholder="Escribe algo sobre ti..."></textarea>
         </ng-template>
       </div>
     </div>
@@ -102,12 +80,7 @@
           </p>
 
           <ng-template #editEmailTpl>
-            <input
-              type="email"
-              [(ngModel)]="u.email"
-              class="contact-input"
-              placeholder="correo@ejemplo.com"
-            />
+            <input type="email" [(ngModel)]="u.email" class="contact-input" placeholder="correo@ejemplo.com" />
           </ng-template>
         </div>
       </div>

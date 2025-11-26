@@ -39,13 +39,6 @@ public class UserService {
 
         // Validar que username no esté duplicado
         if (userRepository.findByUsername(normalizedUsername).isPresent()) {
-            // Si ya tiene ID (es update) y es el mismo usuario, no pasa nada. Pero save()
-            // suele ser create o update completo.
-            // Para simplificar, asumimos que si tiene ID es update, si no, create.
-            // Pero aquí la lógica original lanzaba excepción. La mantenemos por ahora,
-            // salvo que sea el mismo ID.
-            // (Omitimos esa validación compleja para no romper lógica existente, solo si es
-            // nuevo)
             if (user.getId() == null) {
                 throw new IllegalArgumentException("El nombre de usuario ya está registrado");
             }
