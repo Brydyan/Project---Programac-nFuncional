@@ -1,6 +1,7 @@
 /* The Dashboard class in TypeScript represents a component for managing user interactions and
 navigation within an Angular application. */
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../Service/session.service';
@@ -8,6 +9,8 @@ import { MessageService } from '../../Service/Message.service';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ToastService } from '../../Shared/toast.service';   // ajusta la ruta si tu ToastService está en otra carpeta
 import { UserService } from '../../Service/user.service';
+import { ConversationEventsService } from '../../Service/conversation-events.service';
+import { RealtimeService } from '../../Service/realtime.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,6 +34,9 @@ export class Dashboard implements OnInit, OnDestroy {
   ];
 
   private activityIntervalId?: any;
+  pendingConversationsCount: number = 0;
+  private convEventsSub?: Subscription;
+  private realtimeSub?: Subscription;
 
   constructor(
     private sessionService: SessionService,
@@ -39,6 +45,8 @@ export class Dashboard implements OnInit, OnDestroy {
     private userService: UserService,
     private cdr: ChangeDetectorRef,
     private messageService: MessageService,
+    private convEvents: ConversationEventsService,
+    private realtime: RealtimeService,
   ) {}
 
   ngOnInit(): void {
@@ -54,9 +62,14 @@ export class Dashboard implements OnInit, OnDestroy {
         console.log('[Dashboard] sesión OK', session);
         this.loadUserAliasAndStartRefresh(session);
         try {
-          // obtener cantidad de conversaciones con pendientes y exponerlo en consola por ahora
-          this.messageService.getPendingConversationsCount(session.userId).subscribe({ next: (n) => { console.log('[Dashboard] pending convs', n); }, error: () => {} });
-        } catch (e) { }
+          this.loadPendingConversationsCount(session.userId);
+          this.convEventsSub = this.convEvents.refresh$.subscribe(() => this.loadPendingConversationsCount(session.userId));
+          // Suscribirse al inbox para recibir notificaciones en tiempo real
+          this.realtimeSub = this.realtime.subscribeToInbox(session.userId).subscribe({ next: (msg) => {
+            // al recibir un mensaje nuevo, recargar el contador
+            this.loadPendingConversationsCount(session.userId);
+          }, error: (e) => console.error('Realtime inbox error', e) });
+        } catch (e) { console.error('Error loading pending convs', e); }
       },
       error: () => {
         localStorage.removeItem('token');
@@ -69,6 +82,22 @@ export class Dashboard implements OnInit, OnDestroy {
     if (this.activityIntervalId) {
       clearInterval(this.activityIntervalId);
     }
+    if (this.convEventsSub) {
+      this.convEventsSub.unsubscribe();
+      this.convEventsSub = undefined;
+    }
+    if (this.realtimeSub) {
+      this.realtimeSub.unsubscribe();
+      this.realtimeSub = undefined;
+    }
+  }
+
+  private loadPendingConversationsCount(userId: string) {
+    if (!userId) return;
+    this.messageService.getPendingConversationsCount(userId).subscribe({ next: (n: any) => {
+      this.pendingConversationsCount = typeof n === 'number' ? n : Number(n) || 0;
+      this.cdr.detectChanges();
+    }, error: (e) => { console.error('Error fetching pending convs', e); } });
   }
 
   /** Carga el alias del usuario y arranca el refresh periódico */
