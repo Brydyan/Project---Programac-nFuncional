@@ -12,7 +12,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Document(collection="Users")
+@Document(collection = "Users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -39,21 +39,27 @@ public class UserEntity {
     private String month;
     private String year;
 
-    //para perfil 
+    // para perfil
     private String statusMessage;
     private String bio;
     private String avatarUrl;
-    
+
     // Configuración / preferencias
     private Boolean notificationsActivate; // activar notificaciones
-    private Boolean notificationsSound;    // sonido
-    private Boolean notificationsDesktop;  // notificaciones escritorio
+    private Boolean notificationsSound; // sonido
+    private Boolean notificationsDesktop; // notificaciones escritorio
 
-    private Boolean darkMode;             // modo oscuro
-    private Integer fontSize;             // tamaño fuente
+    private Boolean darkMode; // modo oscuro
+    private Integer fontSize; // tamaño fuente
 
-    private String interfaceLanguage;     // 'español', 'english', etc.
-    private String timezone;              // 'Europe/Madrid (GMT+1)', etc.
+    private String interfaceLanguage; // 'español', 'english', etc.
+    private String timezone; // 'Europe/Madrid (GMT+1)', etc.
+
+    // Foto de perfil (se almacena en Firebase Storage). `photoUrl` es la URL
+    // pública accesible desde el cliente.
+    private String photoUrl;
+    // Opcional: path o id en Firebase Storage (ej: "users/{userId}/avatar.jpg")
+    private String photoPath;
 
     // Método auxiliar para asignar username desde alias si es necesario
     public void processAliasAndNombre() {

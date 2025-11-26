@@ -19,6 +19,12 @@ import ec.edu.upse.backend.Entity.UserEntity;
 import ec.edu.upse.backend.Service.UserService;
 import ec.edu.upse.backend.dto.UserProfileDto;
 import ec.edu.upse.backend.dto.UserSummaryDto;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.http.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import ec.edu.upse.backend.Service.FirebaseStorageService;
 
 import ec.edu.upse.backend.dto.UserProfileDto;
 import ec.edu.upse.backend.dto.UserSettingsDto;
@@ -29,8 +35,12 @@ import org.springframework.security.access.AccessDeniedException;
 @RestController
 @RequestMapping("/app/v1/user")
 public class UserController {
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private FirebaseStorageService firebaseStorageService;
 
     // CREATE
     @PostMapping
@@ -63,6 +73,33 @@ public class UserController {
     public ResponseEntity<UserEntity> updateUser(@PathVariable String id, @RequestBody UserEntity newUser) {
         UserEntity updated = userService.updateUser(id, newUser);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    }
+
+    // Actualizar foto de perfil: el cliente sube la imagen a Firebase Storage y
+    // envía la URL pública
+    @PostMapping("/{id}/photo")
+    public ResponseEntity<UserEntity> updatePhoto(@PathVariable String id,
+            @RequestBody java.util.Map<String, String> body) {
+        String photoUrl = body.get("photoUrl");
+        String photoPath = body.get("photoPath");
+        UserEntity updated = userService.updateUserPhoto(id, photoUrl, photoPath);
+        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+    }
+
+    // Endpoint para subir la foto directamente al backend y que éste la guarde en
+    // Firebase Storage
+    @PostMapping(value = "/{id}/photo-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserEntity> uploadPhoto(@PathVariable String id, @RequestPart("file") MultipartFile file) {
+        try {
+            java.util.Map<String, String> res = firebaseStorageService.uploadUserAvatar(id, file);
+            String photoUrl = res.get("photoUrl");
+            String photoPath = res.get("photoPath");
+            UserEntity updated = userService.updateUserPhoto(id, photoUrl, photoPath);
+            return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            logger.error("Error uploading user photo for userId={}", id, e);
+            return ResponseEntity.status(500).body(null);
+        }
     }
 
     // DELETE

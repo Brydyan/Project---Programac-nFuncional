@@ -213,4 +213,22 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    // Actualizar la foto de perfil (se espera que el cliente suba la imagen a
+    // Firebase y envíe la URL pública)
+    public UserEntity updateUserPhoto(String userId, String photoUrl, String photoPath) {
+        // logger.info("updateUserPhoto called for userId={} photoUrl={} photoPath={}",
+        // userId, photoUrl, photoPath);
+        Optional<UserEntity> aux = userRepository.findById(userId);
+        if (aux.isPresent()) {
+            UserEntity u = aux.get();
+            u.setPhotoUrl(photoUrl);
+            u.setPhotoPath(photoPath);
+            UserEntity saved = userRepository.save(u);
+            // logger.info("updateUserPhoto: saved userId={} photoUrl={}", saved.getId(),
+            // saved.getPhotoUrl());
+            return saved;
+        }
+        // logger.warn("updateUserPhoto: user not found for userId={}", userId);
+        return null;
+    }
 }

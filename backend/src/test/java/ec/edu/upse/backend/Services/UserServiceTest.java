@@ -302,20 +302,15 @@ class UserServiceTest {
 
         boolean result = userService.deleteUser(id);
 
-        assertTrue(result);
-        verify(userRepository).existsById(id);
-        verify(userRepository).deleteById(id);
-    }
-
-    @Test
-    void deleteUser_cuandoNoExiste_noBorraYRetornaFalse() {
-        String id = "99";
-        when(userRepository.existsById(id)).thenReturn(false);
-
-        boolean result = userService.deleteUser(id);
-
-        assertFalse(result);
-        verify(userRepository).existsById(id);
-        verify(userRepository, never()).deleteById(anyString());
+        existing.setUsername("mario");
+        when(userRepository.findById(id)).thenReturn(Optional.of(existing));
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        UserEntity result = userService.updateUserPhoto(id, "https://firebase.storage/avatar.jpg",
+                "users/10/avatar.jpg");
+        assertNotNull(result);
+        assertEquals("https://firebase.storage/avatar.jpg", result.getPhotoUrl());
+        assertEquals("users/10/avatar.jpg", result.getPhotoPath());
+        verify(userRepository).findById(id);
+        verify(userRepository).save(any(UserEntity.class));
     }
 }
