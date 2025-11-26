@@ -184,4 +184,21 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    public List<UserSummaryDto> getUsersByIds(List<String> ids) {
+        if (ids == null || ids.isEmpty()) return Collections.emptyList();
+
+        return ids.stream()
+                .map(id -> userRepository.findById(id))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(u -> new UserSummaryDto(
+                        u.getId(),
+                        u.getUsername(),
+                        u.getDisplayName(),
+                        u.getEmail(),
+                        null
+                ))
+                .collect(Collectors.toList());
+    }
+
 }

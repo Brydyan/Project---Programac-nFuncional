@@ -1,0 +1,91 @@
+<div class="channels-container">
+
+  <h1 class="page-title">Canales</h1>
+
+  <!-- BOTONES SUPERIORES -->
+  <div class="top-actions">
+    <div class="action-buttons">
+      <button class="btn-join" (click)="openJoinPanel()">Unirse a un Canal</button>
+      <button class="btn-create" (click)="goCreate($event)">
+        ＋ Crear Nuevo Canal
+      </button>
+
+
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div *ngIf="loading" class="loading-box">
+    <p>Cargando canales...</p>
+  </div>
+
+  <!-- ERROR -->
+  <div *ngIf="!loading && error" class="error-box">
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- SIN CANALES -->
+  <div *ngIf="!loading && !error && channels.length === 0" class="empty-box">
+    <p>No hay canales disponibles.</p>
+  </div>
+
+  <!-- GRID DE CANALES -->
+  <div *ngIf="!loading && !error && channels.length > 0" class="channels-grid">
+    <div *ngFor="let ch of channels" class="channel-card">
+      <div class="channel-header">
+        <div class="channel-icon">📢</div>
+        <h2 class="channel-title">{{ ch.name }}</h2>
+      </div>
+      <p class="channel-meta">👥 {{ ch.members.length }} miembros</p>
+      <p class="channel-meta">🔐 Tipo: {{ ch.type }}</p>
+      <p class="channel-meta">📅 Creado: {{ ch.createdAt | date:'medium' }}</p>
+
+      <button class="btn-view" (click)="openChannel(ch)">Ver Canal</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL EMERGENTE "UNIRSE A UN CANAL" -->
+<div class="join-panel-layer" *ngIf="showJoinPanel" (click)="closeJoinPanel()">
+  <div class="join-panel" (click)="$event.stopPropagation()">
+
+    <header class="join-panel-header">
+      <div class="titles">
+        <h3>Unirse a un Canal Público</h3>
+        <p>Selecciona un canal público para unirte.</p>
+      </div>
+      <button class="close-btn" type="button" (click)="closeJoinPanel()">✕</button>
+    </header>
+
+    <!-- BUSCADOR -->
+    <div class="join-search">
+      <span class="search-icon">🔍</span>
+      <input
+        type="text"
+        placeholder="Buscar canales públicos…"
+        [(ngModel)]="joinSearch"
+        (input)="onJoinSearchChange()"
+      />
+    </div>
+
+    <!-- RESULTADOS -->
+    <div class="join-results">
+      <p class="empty-hint" *ngIf="searchResults.length === 0">
+        No se encontraron canales públicos.
+      </p>
+      <button
+        class="join-item"
+        *ngFor="let ch of searchResults"
+        (click)="joinSelectedChannel(ch)"
+        type="button"
+      >
+        <div class="icon">📢</div>
+        <div class="item-main">
+          <span class="item-name">{{ ch.name }}</span>
+          <span class="item-members">{{ ch.members.length }} miembros</span>
+        </div>
+      </button>
+    </div>
+
+  </div>
+</div>
