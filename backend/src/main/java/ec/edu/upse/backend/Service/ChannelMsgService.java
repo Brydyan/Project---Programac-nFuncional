@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import ec.edu.upse.backend.Entity.ChannelMsgEntity;
@@ -18,9 +19,20 @@ public class ChannelMsgService {
     @Autowired
     private ChannelMsgRepository channelMsgRepository;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     // CREATE
     public ChannelMsgEntity save(ChannelMsgEntity message) {
-        return channelMsgRepository.save(message);
+        // aquí puedes hacer validaciones, normalización, etc. si quieres
+        ChannelMsgEntity saved = channelMsgRepository.save(message);
+        // Notificar a todos los que están suscritos al canal
+        messagingTemplate.convertAndSend(
+            "/topic/channel." + saved.getChannel(),
+            saved
+        );
+
+        return saved;
     }
 
     // READ
