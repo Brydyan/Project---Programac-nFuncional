@@ -3,18 +3,27 @@
   <!-- HEADER CON INFO DEL CONTACTO -->
   <header class="chat-header">
     <div class="chat-header-left">
-      <div class="avatar">
+      <div class="avatar" (click)="openProfilePreview()">
         <img
           src="https://i.pravatar.cc/100?u={{ contactId }}"
           alt="Avatar"
         />
       </div>
-      <div class="contact-info">
+      <div class="contact-info" (click)="openProfilePreview()">
         <!-- aquí usamos el alias/nombre real -->
         <div class="contact-name">
           {{ contactDisplayName || 'Chat 1 a 1' }}
         </div>
-        <div class="contact-status" [ngClass]="{ 'online': contactPresence === 'ONLINE', 'inactive': contactPresence === 'INACTIVE', 'offline': contactPresence === 'OFFLINE' }">{{ contactStatusLabel }}</div>
+        <div
+          class="contact-status"
+          [ngClass]="{
+            'online': contactPresence === 'ONLINE',
+            'inactive': contactPresence === 'INACTIVE',
+            'offline': contactPresence === 'OFFLINE'
+          }"
+        >
+          {{ contactStatusLabel }}
+        </div>
       </div>
     </div>
 
@@ -93,5 +102,30 @@
     <span>Enlaces Rápidos</span>
     <span>·</span>
     <span>Soporte</span>
+  </div>
+</div>
+
+<!-- PREVIEW FLOTANTE DE PERFIL DEL CONTACTO -->
+<div class="profile-preview-backdrop" *ngIf="showProfilePreview">
+  <div class="profile-preview-card">
+    <button class="preview-close-btn" type="button" (click)="closeProfilePreview()">✕</button>
+
+    <ng-container *ngIf="!previewLoading && profilePreview as p; else loadingPreviewTpl">
+      <div class="preview-avatar-wrapper">
+        <img
+          [src]="p.avatarUrl || 'https://i.pravatar.cc/150?u=' + p.id"
+          alt="Avatar"
+          class="preview-avatar"
+        />
+      </div>
+
+      <h3 class="preview-name">{{ p.displayName || p.username }}</h3>
+      <p class="preview-status">📧 {{ p.email }}</p>
+      <!-- Aquí solo usamos campos que sí existen en UserSearchResult -->
+    </ng-container>
+
+    <ng-template #loadingPreviewTpl>
+      <p>Cargando perfil...</p>
+    </ng-template>
   </div>
 </div>

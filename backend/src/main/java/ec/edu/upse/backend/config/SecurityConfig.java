@@ -5,6 +5,7 @@ import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -60,7 +61,8 @@ public class SecurityConfig {
                 .requestMatchers("/app/v1/user/**").authenticated()
                 .requestMatchers("/app/v1/conversations/**").authenticated()
                 .requestMatchers("/app/v1/messages/**").authenticated()
-
+                .requestMatchers(HttpMethod.GET, "/app/v1/user/profile/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/app/v1/user/profile/**").authenticated()
                 .anyRequest().authenticated()
             )
 
@@ -70,8 +72,9 @@ public class SecurityConfig {
             // Desactivamos login form y basic auth
             .formLogin(form -> form.disable())
             .httpBasic(basic -> basic.disable());
-
+            
         return http.build();
+        
     }
 
     @Bean

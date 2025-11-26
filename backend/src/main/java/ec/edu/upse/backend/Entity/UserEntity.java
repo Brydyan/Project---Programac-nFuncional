@@ -30,7 +30,7 @@ public class UserEntity {
     private String status; // ONLINE, OFFLINE, AWAY
     // Subdocumento embebido
     private Map<String, Object> preferences; // Ejemplo: { "theme": "dark", "notifications": true }
-    
+
     // Campos adicionales para mapeo con frontend
     private String alias; // Sinónimo de username
     private String nombre; // Sinónimo de displayName
@@ -38,7 +38,23 @@ public class UserEntity {
     private String day;
     private String month;
     private String year;
+
+    //para perfil 
+    private String statusMessage;
+    private String bio;
+    private String avatarUrl;
     
+    // Configuración / preferencias
+    private Boolean notificationsActivate; // activar notificaciones
+    private Boolean notificationsSound;    // sonido
+    private Boolean notificationsDesktop;  // notificaciones escritorio
+
+    private Boolean darkMode;             // modo oscuro
+    private Integer fontSize;             // tamaño fuente
+
+    private String interfaceLanguage;     // 'español', 'english', etc.
+    private String timezone;              // 'Europe/Madrid (GMT+1)', etc.
+
     // Método auxiliar para asignar username desde alias si es necesario
     public void processAliasAndNombre() {
         if (this.alias != null && !this.alias.isEmpty() && this.username == null) {

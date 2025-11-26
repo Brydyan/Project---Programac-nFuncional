@@ -1,1 +1,63 @@
 /* You can add global styles to this file, and also import other style files */
+/* Fondo global y layout responsive */
+
+:root {
+  --app-bg: radial-gradient(circle at top left, #0f172a, #020617 55%);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--app-bg);
+  color: #e5e7eb;
+}
+
+/* El root de Angular */
+app-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Contenedor general del dashboard */
+.main-layout {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  padding: 1rem 1.5rem;
+}
+
+/* “Tarjeta” central de la app */
+.main-shell {
+  width: 100%;
+  max-width: 1280px;
+  background: rgba(15, 23, 42, 0.92);
+  border-radius: 18px;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .main-layout {
+    padding: 0.5rem;
+  }
+
+  .main-shell {
+    border-radius: 0.75rem;
+  }
+}

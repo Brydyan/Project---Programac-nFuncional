@@ -1,45 +1,154 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { SessionService } from '../../Service/session.service';
+import { UserProfile } from '../../Model/user-profile-model';
+import { UserService } from '../../Service/user.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-userprofile',
   standalone: true,
-  imports: [CommonModule, RouterModule], // Agregar RouterModule aquí
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './userprofile.html',
   styleUrls: ['./userprofile.scss']
 })
-export class UserProfileComponent {
-  user = {
-    name: 'Elena Mendoza',
-    bio: 'Apasionada por el diseño UI/UX y el desarrollo frontend. Disfruto creando experiencias de usuario intuitivas y visualmente atractivas. Siempre buscando aprender y crecer en el mundo tecnológico.',
-    email: 'elena.mendoza@ejemplo.com',
-    phone: '+34 678 123 456',
-    notifications: true,
-    theme: 'claro'
-  };
+export class UserProfileComponent implements OnInit {
+  
+  user: UserProfile | null = null;
+  originalUser: UserProfile | null = null;
 
-  constructor(private router: Router) {}
+  loading = true;
+  error: string | null = null;
 
+  // flags de edición
+  editingProfile = false;
+  editingContact = false;
+
+  // avatar local (preview)
+  avatarPreview: string | null = null;
+  selectedAvatarFile: File | null = null;
+
+  constructor(
+    private router: Router,
+    private sessionService: SessionService,
+    private userService: UserService,
+    private cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      this.error = 'No se encontró token de sesión';
+      this.loading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.sessionService.getByToken(token).subscribe({
+      next: (session) => {
+        const userId = session.userId;
+
+        this.userService.getProfile(userId).subscribe({
+          next: (profile) => {
+            this.user = profile;
+            // copia para cancelar cambios
+            this.originalUser = { ...profile };
+            this.avatarPreview = profile.avatarUrl || null;
+
+            this.loading = false;
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            console.error('Error cargando perfil', err);
+            this.error = 'No se pudo cargar el perfil';
+            this.loading = false;
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error obteniendo sesión', err);
+        this.error = 'No se pudo obtener la sesión';
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // ===== Navegación =====
   onCancel() {
-    // Lógica para cancelar
-    console.log('Cancelar clicked');
     this.router.navigate(['/dashboard']);
   }
 
   onBackToChat() {
-    // Lógica para volver al chat
-    console.log('Volver a Chat clicked');
     this.router.navigate(['/dashboard']);
   }
 
-  onEditContact() {
-    // Lógica para editar contacto
-    console.log('Editar Contacto clicked');
+  // ===== Edición =====
+
+  enableEditProfile() {
+    this.editingProfile = true;
+  }
+
+  enableEditContact() {
+    this.editingContact = true;
+  }
+
+  onAvatarSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || !input.files.length) return;
+    const file = input.files[0];
+    this.selectedAvatarFile = file;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.avatarPreview = reader.result as string;
+      this.cdr.detectChanges();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  cancelEdits() {
+    if (this.originalUser) {
+      this.user = { ...this.originalUser };
+      this.avatarPreview = this.originalUser.avatarUrl || null;
+    }
+    this.editingProfile = false;
+    this.editingContact = false;
+    this.selectedAvatarFile = null;
+    this.cdr.detectChanges();
+  }
+
+  saveProfile() {
+    if (!this.user) return;
+
+    // de momento solo enviamos avatarUrl como está (mañana tu compañero mete Firebase)
+    const payload: UserProfile = {
+      ...this.user,
+      avatarUrl: this.avatarPreview || this.user.avatarUrl || ''
+    };
+
+    this.userService.updateProfile(this.user.id, payload).subscribe({
+      next: (updated) => {
+        this.user = updated;
+        this.originalUser = { ...updated };
+        this.avatarPreview = updated.avatarUrl || null;
+        this.editingProfile = false;
+        this.editingContact = false;
+        this.selectedAvatarFile = null;
+        this.cdr.detectChanges();
+        alert('Perfil actualizado correctamente');
+      },
+      error: (err) => {
+        console.error('Error actualizando perfil', err);
+        alert('No se pudo actualizar el perfil');
+      }
+    });
   }
 
   onEditPreferences() {
-    // Lógica para editar preferencias
-    console.log('Editar Preferencias clicked');
-  }
+  this.router.navigate(['/dashboard/settings']);
+}
+
 }

@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-
+import { UserProfile } from '../Model/user-profile-model';
+import { UserSettingsDto } from '../Model/user-settings-model';
 export interface UserSearchResult {
   id: string;
   username: string;
@@ -16,7 +17,7 @@ export interface UserSearchResult {
 export class UserService {
 
   // En Docker/Nginx:
-  private baseUrl = '/app/v1/user';
+  private api = '/app/v1/user';
 
 
   constructor(private http: HttpClient) {}
@@ -26,11 +27,11 @@ export class UserService {
     if (excludeId) {
       params = params.set('excludeId', excludeId);
     }
-    return this.http.get<UserSearchResult[]>(`${this.baseUrl}/search`, { params });
+    return this.http.get<UserSearchResult[]>(`${this.api}/search`, { params });
   }
 
   getUserById(id: string): Observable<UserSearchResult> {
-    return this.http.get<UserSearchResult>(`${this.baseUrl}/${id}`);
+    return this.http.get<UserSearchResult>(`${this.api}/${id}`);
   }
 
   getUsersByIds(ids: string[]): Observable<UserSearchResult[]> {
@@ -39,7 +40,26 @@ export class UserService {
     }
     const idsParam = ids.join(',');
     const params = new HttpParams().set('ids', idsParam);
-    return this.http.get<UserSearchResult[]>(`${this.baseUrl}/by-ids`, { params });
+    return this.http.get<UserSearchResult[]>(`${this.api}/by-ids`, { params });
   }
 
+  getProfile(userId: string) {
+    return this.http.get<UserProfile>(`${this.api}/profile/me`);
+  }
+
+  updateProfile(userId: string, profile: UserProfile) {
+    return this.http.put<UserProfile>(`${this.api}/profile/me`, profile);
+  }
+
+  getSettings(userId: string) {
+    return this.http.get<UserSettingsDto>(`${this.api}/settings/me`);
+  }
+
+  updateSettings(userId: string, settings: UserSettingsDto) {
+    return this.http.put<UserSettingsDto>(`${this.api}/settings/me`, settings);
+  }
+
+
 }
+
+

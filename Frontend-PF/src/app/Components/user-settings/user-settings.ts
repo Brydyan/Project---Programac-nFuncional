@@ -1,10 +1,14 @@
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../Service/session.service';
 import { UserService } from '../../Service/user.service';
 import { AuthService } from '../../Service/AuthService';
 import { finalize, take } from 'rxjs/operators';
+import { UserProfile } from '../../Model/user-profile-model';
+import { UserSettingsDto } from '../../Model/user-settings-model';
+import { forkJoin } from 'rxjs';
+
 
 @Component({
   selector: 'app-user-settings',
@@ -13,12 +17,18 @@ import { finalize, take } from 'rxjs/operators';
   templateUrl: './user-settings.html',
   styleUrls: ['./user-settings.scss']
 })
-export class UserSettings {
+export class UserSettings implements OnInit {
+  
   // Perfil del Usuario
   username = 'UsuarioPureChat';
   statusOptions = ['Online', 'Offline', 'Ausente', 'Ocupado'];
   selectedStatus = 'Online';
   profileImage: string | null = 'https://i.pravatar.cc/150?img=12';
+  isSavingSettings = false;
+
+  currentUserId!: string;
+  profile: UserProfile | null = null;
+
 
   // Notificaciones - Sección 1
   notificationsSettings = {
@@ -62,6 +72,104 @@ export class UserSettings {
     'Asia/Tokyo (GMT+9)'
   ];
 
+
+  ngOnInit(): void {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  this.sessionService.getByToken(token).pipe(take(1)).subscribe({
+    next: (session) => {
+      this.currentUserId = session.userId;
+
+      // 1) Cargar settings
+      this.userService.getSettings(this.currentUserId)
+        .pipe(take(1))
+        .subscribe({
+          next: (settings) => {
+            // Rellenar tus estructuras locales
+            if (settings.notificationsActivate != null) {
+              this.notificationsSettings.activate = settings.notificationsActivate;
+            }
+            if (settings.notificationsSound != null) {
+              this.notificationsSettings.sound = settings.notificationsSound;
+            }
+            if (settings.notificationsDesktop != null) {
+              this.notificationsSettings.desktop = settings.notificationsDesktop;
+            }
+
+            if (settings.darkMode != null) {
+              this.appearanceSettings.darkMode = settings.darkMode;
+            }
+            if (settings.fontSize != null) {
+              this.appearanceSettings.fontSize = settings.fontSize;
+            }
+
+            if (settings.interfaceLanguage) {
+              this.languageSettings.interfaceLanguage = settings.interfaceLanguage;
+            }
+            if (settings.timezone) {
+              this.languageSettings.timezone = settings.timezone;
+            }
+          },
+          error: (err) => console.error('Error cargando settings', err)
+        });
+
+      // 2) Cargar perfil
+      this.userService.getProfile(this.currentUserId)
+        .pipe(take(1))
+        .subscribe({
+          next: (profile) => {
+            this.profile = profile;
+          },
+          error: (err) => console.error('Error cargando perfil en Settings', err)
+        });
+    },
+    error: (err) => console.error('Error obteniendo sesión', err)
+  });
+}
+
+private loadSettings() {
+  if (!this.currentUserId) return;
+
+  this.userService.getSettings(this.currentUserId)
+    .pipe(take(1))
+    .subscribe({
+      next: (settings) => {
+        // Mapear lo que viene del backend a tus variables locales
+
+        // Notificaciones - Sección 1
+        if (settings.notificationsActivate != null) {
+          this.notificationsSettings.activate = settings.notificationsActivate;
+        }
+        if (settings.notificationsSound != null) {
+          this.notificationsSettings.sound = settings.notificationsSound;
+        }
+        if (settings.notificationsDesktop != null) {
+          this.notificationsSettings.desktop = settings.notificationsDesktop;
+        }
+
+        // Apariencia
+        if (settings.darkMode != null) {
+          this.appearanceSettings.darkMode = settings.darkMode;
+        }
+        if (settings.fontSize != null) {
+          this.appearanceSettings.fontSize = settings.fontSize;
+        }
+
+        // Idioma / zona horaria
+        if (settings.interfaceLanguage) {
+          this.languageSettings.interfaceLanguage = settings.interfaceLanguage;
+        }
+        if (settings.timezone) {
+          this.languageSettings.timezone = settings.timezone;
+        }
+
+        this.cdr.markForCheck();
+      },
+      error: (err) => console.error('Error cargando settings', err)
+    });
+}
+
   changePhoto() {
     // Simular selección de archivo
     const input = document.createElement('input');
@@ -87,6 +195,7 @@ export class UserSettings {
   private userService = inject(UserService);
   private authService = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
+
 
   showSecurity = false;
   showPasswordModal = false;
@@ -261,5 +370,61 @@ export class UserSettings {
     };
     
     alert('Valores restablecidos a los predeterminados.');
+  }
+
+  saveSettings() {
+    if (!this.currentUserId) return;
+
+    this.isSavingSettings = true;
+
+    // Payload de ajustes
+    const settingsPayload: UserSettingsDto = {
+      id: this.currentUserId,
+      notificationsActivate: this.notificationsSettings.activate,
+      notificationsSound: this.notificationsSettings.sound,
+      notificationsDesktop: this.notificationsSettings.desktop,
+      darkMode: this.appearanceSettings.darkMode,
+      fontSize: this.appearanceSettings.fontSize,
+      interfaceLanguage: this.languageSettings.interfaceLanguage,
+      timezone: this.languageSettings.timezone
+    };
+
+    // Payload de perfil (si existe profile cargado)
+    const profilePayload: UserProfile | null = this.profile
+      ? {
+          ...this.profile,
+          displayName: this.profile.displayName,
+          statusMessage: this.profile.statusMessage,
+          bio: this.profile.bio,
+          // avatarUrl lo dejamos como esté por ahora (lo hará tu pana con Firebase)
+        }
+      : null;
+
+    // Llamamos a ambas cosas en paralelo
+    const requests = [];
+
+    requests.push(this.userService.updateSettings(this.currentUserId, settingsPayload));
+
+    if (profilePayload) {
+      requests.push(this.userService.updateProfile(this.currentUserId, profilePayload));
+    }
+
+    // Ejecutar todo junto
+    forkJoin(requests)
+      .pipe(
+        take(1),
+        finalize(() => {
+          this.isSavingSettings = false;
+        })
+      )
+      .subscribe({
+        next: () => {
+          alert('Configuración y perfil actualizados correctamente');
+        },
+        error: (err) => {
+          console.error('Error guardando configuración/perfil', err);
+          alert('No se pudo guardar la configuración');
+        }
+      });
   }
 }

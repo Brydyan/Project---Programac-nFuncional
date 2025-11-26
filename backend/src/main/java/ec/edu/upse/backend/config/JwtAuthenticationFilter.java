@@ -36,33 +36,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
+        System.out.println("[JWT] Request path = " + path);
 
-        // 🟦 REGLA ESPECIAL: endpoint de verificación de contraseña
-        if (path.contains("/app/v1/auth/verify-password")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        // ... tus if de rutas públicas igual
 
-        // 🔓 RUTAS PÚBLICAS (no procesan JWT)
-        if (path.startsWith("/app/v1/auth/")
-            || path.startsWith("/app/v1/user/available/")
-            || path.startsWith("/app/v1/sessions/token/")
-            || path.startsWith("/app/v1/sessions/refresh/")
-            || path.startsWith("/app/v1/user/token/")
-            || path.startsWith("/ws/")) {
-
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // Intentar leer token del header Authorization
         String header = request.getHeader("Authorization");
         String token = null;
         if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
             token = header.substring(7);
         }
 
-        // Si no viene en header → revisar query param ?token=
         if (!StringUtils.hasText(token)) {
             String tokenParam = request.getParameter("token");
             if (StringUtils.hasText(tokenParam)) {
@@ -70,36 +53,46 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // Si NO hay token → seguir sin autenticar
+        System.out.println("[JWT] Token recibido = " + token);
+
         if (!StringUtils.hasText(token)) {
+            System.out.println("[JWT] Sin token → sigo sin auth");
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
             DecodedJWT decoded = jwtUtil.validateToken(token);
+            System.out.println("[JWT] Token OK, sub = " + decoded.getSubject());
 
             var opt = sessionService.validateSession(token);
+            System.out.println("[JWT] validateSession(token) presente? " + opt.isPresent());
+
             if (opt.isPresent()) {
-                String username = jwtUtil.getUsernameFromToken(decoded);
+                String userId = jwtUtil.getUserIdFromToken(decoded);
+                System.out.println("[JWT] Autenticando userId = " + userId);
 
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
-                                username,
+                                userId,
                                 null,
                                 Collections.emptyList()
                         );
 
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
+            } else {
+                System.out.println("[JWT] Sesión NO válida, no autentico");
             }
 
         } catch (JWTVerificationException ex) {
-            // token inválido → no autenticamos
+            System.out.println("[JWT] Token inválido: " + ex.getMessage());
+            // no autenticamos, pero tampoco rompemos
         } catch (Exception ex) {
-            // no rompemos la request
+            System.out.println("[JWT] Error inesperado: " + ex.getMessage());
         }
 
         filterChain.doFilter(request, response);
     }
+
 }

@@ -1,0 +1,20 @@
+package ec.edu.upse.backend.dto;
+
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserProfileDto {
+    private String id;
+    private String username;
+    private String displayName;
+    private String email;
+
+    private String bio;
+    private String statusMessage;
+    private String avatarUrl;
+}

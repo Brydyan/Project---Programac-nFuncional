@@ -3,49 +3,54 @@
   <div class="settings-main">
     <h1 class="settings-title">Configuración General</h1>
 
-    <!-- PERFIL DEL USUARIO -->
-    <section class="settings-section">
-      <div class="section-header">
-        <span class="section-icon">👤</span>
-        <h2>Perfil del Usuario</h2>
-      </div>
-      <p class="section-description">Actualiza tu información personal aquí.</p>
+    <!-- PERFIL DEL USUARIO 
+  <section class="settings-section" *ngIf="profile as p">
+    <div class="section-header">
+      <span class="section-icon">👤</span>
+      <h2>Perfil del Usuario</h2>
+    </div>
+    <p class="section-description">Actualiza tu información personal aquí.</p>
 
-      <div class="form-group">
-        <label for="username">Nombre de Usuario</label>
-        <input 
-          type="text" 
-          id="username" 
-          [(ngModel)]="username" 
-          class="form-input"
-          placeholder="Tu nombre de usuario"
+    <div class="form-group">
+      <label for="username">Nombre visible</label>
+      <input 
+        type="text" 
+        id="username" 
+        [(ngModel)]="p.displayName" 
+        name="displayName"
+        class="form-input"
+        placeholder="Tu nombre visible"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="status">Estado</label>
+      <select
+        id="status"
+        [(ngModel)]="p.statusMessage"
+        name="statusMessage"
+        class="form-select">
+        <option *ngFor="let status of statusOptions" [ngValue]="status">
+          {{ status }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Foto de Perfil</label>
+      <div class="photo-control">
+        <img 
+          [src]="profileImage || p.avatarUrl || 'https://i.pravatar.cc/150?u=' + p.id" 
+          alt="Foto de perfil" 
+          class="profile-photo"
         />
+        <button type="button" class="btn-change-photo" (click)="changePhoto()">
+          Cambiar Foto
+        </button>
       </div>
-
-      <div class="form-group">
-        <label for="status">Estado</label>
-        <select id="status" [(ngModel)]="selectedStatus" class="form-select">
-          <option *ngFor="let status of statusOptions" [value]="status">
-            {{ status }}
-          </option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Foto de Perfil</label>
-        <div class="photo-control">
-          <img 
-            [src]="profileImage || 'https://i.pravatar.cc/150?img=12'" 
-            alt="Foto de perfil" 
-            class="profile-photo"
-          />
-          <button type="button" class="btn-change-photo" (click)="changePhoto()">
-            Cambiar Foto
-          </button>
-        </div>
-      </div>
-    </section>
-
+    </div>
+  </section>
+-->
     <!-- NOTIFICACIONES - SECCIÓN 1 -->
     <section class="settings-section">
       <div class="section-header">
@@ -285,37 +290,44 @@
     </button>
   </div>
 
-  <!-- COLUMNA DERECHA: PREVIEW -->
-  <aside class="settings-preview">
-    <div class="preview-card">
-      <h3 class="preview-title">Previsualización del Perfil</h3>
-      <p class="preview-subtitle">Así te verán los demás.</p>
+  <!-- COLUMNA DERECHA: PREVIEW 
+  <aside class="settings-preview" *ngIf="profile as p">
+  <div class="preview-card">
+    <h3 class="preview-title">Previsualización del Perfil</h3>
+    <p class="preview-subtitle">Así te verán los demás.</p>
 
-      <div class="preview-profile">
-        <div class="preview-avatar-wrapper">
-          <img 
-            [src]="profileImage || 'https://i.pravatar.cc/150?img=12'" 
-            alt="Avatar" 
-            class="preview-avatar"
-          />
-          <span class="preview-status-dot" [class.online]="selectedStatus === 'Online'"></span>
-        </div>
-
-        <h4 class="preview-username">{{ username }}</h4>
-        <span class="preview-status">{{ selectedStatus }}</span>
-
-        <p class="preview-note">
-          Tu perfil se verá así para otros usuarios. Los cambios se aplicarán al guardar.
-        </p>
+    <div class="preview-profile">
+      <div class="preview-avatar-wrapper">
+        <img 
+          [src]="profileImage || p.avatarUrl || 'https://i.pravatar.cc/150?u=' + p.id" 
+          alt="Avatar" 
+          class="preview-avatar"
+        />
+        <span
+          class="preview-status-dot"
+          [class.online]="p.statusMessage === 'Online' || p.statusMessage === 'En línea'">
+        </span>
       </div>
 
-      <button type="button" class="btn-save" (click)="saveChanges()">
-        <span class="btn-icon">💾</span>
-        Guardar Cambios
-      </button>
+      <h4 class="preview-username">
+        {{ p.displayName || p.username }}
+      </h4>
+      <span class="preview-status">
+        {{ p.statusMessage || 'Sin estado' }}
+      </span>
+
+      <p class="preview-note">
+        Tu perfil se verá así para otros usuarios. Los cambios se aplicarán al guardar.
+      </p>
     </div>
-  </aside>
-</div>
+
+    <button type="button" class="btn-save" (click)="saveChanges()">
+      <span class="btn-icon">💾</span>
+      Guardar Cambios
+    </button>
+  </div>
+</aside>
+-->
 
 <!-- Modal confirmar contraseña -->
 <div class="modal-backdrop" *ngIf="showPasswordModal">
@@ -331,8 +343,12 @@
       autocomplete="new-password"
     />
     <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end">
-      <button class="btn-change-photo" type="button" (click)="showPasswordModal=false">Cancelar</button>
-      <button class="btn-save" type="submit" [disabled]="isVerifyingPassword">Confirmar</button>
+      <button class="btn-change-photo" type="button" (click)="showPasswordModal=false">
+        Cancelar
+      </button>
+      <button class="btn-save" type="submit">
+        Guardar cambios
+      </button>
     </div>
   </form>
 </div>

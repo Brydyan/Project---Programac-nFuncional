@@ -4,10 +4,31 @@
   <!-- Barra superior -->
   <div class="conversations-header">
     <div class="tabs">
-      <button class="tab active">Conversaciones</button>
-      <button class="tab">Canales</button>
-      <button class="tab">Settings</button>
-    </div>
+      <button
+        class="tab"
+        routerLink="/dashboard/conversations"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
+        Conversaciones
+      </button>
+
+      <button
+        class="tab"
+        routerLink="/dashboard/channels"
+        routerLinkActive="active"
+      >
+        Canales
+      </button>
+
+      <button
+        class="tab"
+        routerLink="/dashboard/profile-settings"
+        routerLinkActive="active"
+      >
+        Settings
+      </button>
+</div>
 
     <button class="new-conversation-btn" (click)="newConversation()">
       + Nueva Conversación

@@ -7,10 +7,11 @@ import { ChangeDetectorRef } from '@angular/core';
 import { SessionService } from '../../../Service/session.service';
 import { HttpClient } from '@angular/common/http';
 import { ChatMessage, MessageService } from '../../../Service/Message.service';
-import { UserService } from '../../../Service/user.service';
+import { UserSearchResult, UserService } from '../../../Service/user.service';
 import { RealtimeService } from '../../../Service/realtime.service';
 import { Subscription } from 'rxjs';
 import { ConversationEventsService } from '../../../Service/conversation-events.service';
+import { UserProfile } from '../../../Model/user-profile-model';
 @Component({
   selector: 'app-chat-thread',
   standalone: true,
@@ -28,6 +29,11 @@ export class ChatThread implements OnInit, OnDestroy {
   private http = inject(HttpClient);
   private cdr = inject(ChangeDetectorRef);
 
+  otherUserId!: string;         
+  profilePreview: UserSearchResult | null = null;
+  showProfilePreview = false;
+  previewLoading = false;
+ 
   contactId!: string;
   currentUserId!: string;
 
@@ -66,7 +72,8 @@ export class ChatThread implements OnInit, OnDestroy {
       this.messages = [];
       this.loading = true;
       this.cdr.detectChanges();
-
+      
+      
       this.loadContact();
       this.initChat();
       // Registrar handlers globales de presencia (se añaden cuando el componente se crea)
@@ -436,4 +443,32 @@ export class ChatThread implements OnInit, OnDestroy {
       }
     });
   }
+ 
+  openProfilePreview() {
+    if (!this.contactId) return;
+
+    this.showProfilePreview = true;
+    this.previewLoading = true;
+    this.cdr.detectChanges();
+
+    this.userService.getUserById(this.contactId).subscribe({
+      next: (user) => {
+        this.profilePreview = user;
+        this.previewLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error cargando perfil del contacto', err);
+        this.previewLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closeProfilePreview() {
+    this.showProfilePreview = false;
+    this.profilePreview = null;
+    this.cdr.detectChanges();
+  }
+
 }

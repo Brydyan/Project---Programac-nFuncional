@@ -17,7 +17,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ec.edu.upse.backend.Entity.UserEntity;
 import ec.edu.upse.backend.Service.UserService;
+import ec.edu.upse.backend.dto.UserProfileDto;
 import ec.edu.upse.backend.dto.UserSummaryDto;
+
+import ec.edu.upse.backend.dto.UserProfileDto;
+import ec.edu.upse.backend.dto.UserSettingsDto;
+import ec.edu.upse.backend.Entity.UserEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 
 @RestController
 @RequestMapping("/app/v1/user")
@@ -80,4 +87,99 @@ public class UserController {
         List<UserSummaryDto> users = userService.getUsersByIds(ids);
         return ResponseEntity.ok(users);
     }
+
+  // ========= PERFIL =========
+    @GetMapping("/profile/me")
+    public ResponseEntity<UserProfileDto> getMyProfile(Authentication auth) {
+        String authUserId = auth.getName(); // aquí asumes que el subject del JWT es el ID del user
+        return userService.getUserById(authUserId)
+            .map(this::toProfileDto)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/profile/me")
+    public ResponseEntity<UserProfileDto> updateMyProfile(
+            @RequestBody UserProfileDto dto,
+            Authentication auth
+    ) {
+        String authUserId = auth.getName();
+
+        return userService.getUserById(authUserId)
+            .map(user -> {
+                user.setDisplayName(dto.getDisplayName());
+                user.setBio(dto.getBio());
+                user.setStatusMessage(dto.getStatusMessage());
+                // user.setAvatarUrl(dto.getAvatarUrl());
+
+                UserEntity saved = userService.save(user);
+                return ResponseEntity.ok(toProfileDto(saved));
+            })
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+
+    // ========= SETTINGS =========
+
+    @GetMapping("/settings/me")
+    public ResponseEntity<UserSettingsDto> getMySettings(Authentication auth) {
+        String authUserId = auth.getName();
+        return userService.getUserById(authUserId)
+            .map(this::toSettingsDto)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/settings/me")
+    public ResponseEntity<UserSettingsDto> updateMySettings(
+            @RequestBody UserSettingsDto dto,
+            Authentication auth
+    ) {
+    String authUserId = auth.getName();
+
+    return userService.getUserById(authUserId)
+        .map(user -> {
+                user.setNotificationsActivate(dto.getNotificationsActivate());
+                user.setNotificationsSound(dto.getNotificationsSound());
+                user.setNotificationsDesktop(dto.getNotificationsDesktop());
+
+                user.setDarkMode(dto.getDarkMode());
+                user.setFontSize(dto.getFontSize());
+
+                user.setInterfaceLanguage(dto.getInterfaceLanguage());
+                user.setTimezone(dto.getTimezone());
+
+                UserEntity saved = userService.save(user);
+                return ResponseEntity.ok(toSettingsDto(saved));
+            })
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ========= MAPPERS PRIVADOS =========
+
+    private UserProfileDto toProfileDto(UserEntity user) {
+        UserProfileDto dto = new UserProfileDto();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setDisplayName(user.getDisplayName());
+        dto.setEmail(user.getEmail());
+        dto.setBio(user.getBio());
+        dto.setStatusMessage(user.getStatusMessage());
+        dto.setAvatarUrl(user.getAvatarUrl());
+        return dto;
+    }
+
+    private UserSettingsDto toSettingsDto(UserEntity user) {
+        UserSettingsDto dto = new UserSettingsDto();
+        dto.setId(user.getId());
+        dto.setNotificationsActivate(user.getNotificationsActivate());
+        dto.setNotificationsSound(user.getNotificationsSound());
+        dto.setNotificationsDesktop(user.getNotificationsDesktop());
+        dto.setDarkMode(user.getDarkMode());
+        dto.setFontSize(user.getFontSize());
+        dto.setInterfaceLanguage(user.getInterfaceLanguage());
+        dto.setTimezone(user.getTimezone());
+        return dto;
+    }
 }
+

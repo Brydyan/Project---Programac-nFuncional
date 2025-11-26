@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLinkActive } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import {
@@ -18,7 +18,7 @@ import { ChatMessage } from '../../../Service/Message.service';
 @Component({
   selector: 'app-conversations',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLinkActive],
   templateUrl: './conversations.html',
   styleUrls: ['./conversations.css']
 })

@@ -68,7 +68,8 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/dashboard/channels-thread/channels-thread')
             .then(m => m.ChannelsThread)
-      }
+      },
+    
     ]
   },
 
