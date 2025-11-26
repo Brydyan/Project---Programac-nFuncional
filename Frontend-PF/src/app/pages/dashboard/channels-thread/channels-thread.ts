@@ -14,11 +14,17 @@ import { UserService } from '../../../Service/user.service';
 @Component({
   selector: 'app-channels-thread',
   standalone: true,
-  imports: [CommonModule,FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './channels-thread.html',
   styleUrl: './channels-thread.css',
 })
-export class ChannelsThread implements OnInit, OnDestroy{
+export class ChannelsThread implements OnInit, OnDestroy {
+
+  //WS para mensajes del canal
+  private wsChannelSub?: Subscription;
+  //WS para eventos de miembros (online/offline)
+  private wsEventsSub?: Subscription;
+
   private sessionService = inject(SessionService);
   private cdr = inject(ChangeDetectorRef);
 
@@ -34,15 +40,12 @@ export class ChannelsThread implements OnInit, OnDestroy{
   membersInfo: MemberModel[] = [];
   onlineMembers: MemberModel[] = [];
 
-  private wsSub?: Subscription;
-
   constructor(
     private channelMsgService: ChannelsMsgService,
     private channelService: ChannelsService,
     private realtime: RealtimeService,
     private route: ActivatedRoute,
     private userService: UserService,
-    
   ) {}
 
   ngOnInit(): void {
@@ -53,9 +56,9 @@ export class ChannelsThread implements OnInit, OnDestroy{
     this.initSession();
   }
 
-
   ngOnDestroy(): void {
-    this.wsSub?.unsubscribe();
+    this.wsChannelSub?.unsubscribe();
+    this.wsEventsSub?.unsubscribe();
   }
 
   private initSession(): void {
@@ -65,8 +68,13 @@ export class ChannelsThread implements OnInit, OnDestroy{
     this.sessionService.getByToken(token).subscribe({
       next: (session) => {
         this.currentUserId = session.userId;
+
+        // HTTP inicial
         this.loadMessages();
         this.loadAllUsers();
+
+        // WS mensajes del canal
+        this.subscribeChannelMessages();
       },
       error: (err) => console.error('Error obteniendo sesión del usuario', err),
     });
@@ -103,7 +111,9 @@ export class ChannelsThread implements OnInit, OnDestroy{
       }));
 
       this.updateOnlineMembers();
-      this.subscribeRealtime();
+
+      // WS de eventos (online/offline)
+      this.subscribeRealtimeEvents();
 
       // --- Llamada optimizada para obtener usernames reales ---
       if (channel.members.length > 0) {
@@ -122,15 +132,17 @@ export class ChannelsThread implements OnInit, OnDestroy{
     });
   }
 
-
   private updateOnlineMembers() {
     this.onlineMembers = this.membersInfo.filter((m) => m.online);
     this.cdr.detectChanges();
   }
 
-  private subscribeRealtime() {
-    this.wsSub = this.realtime
-      .subscribeToChannelEvents(this.currentUserId!)
+  // 🔔 WS: eventos tipo USER_STATUS_CHANGED
+  private subscribeRealtimeEvents() {
+    if (!this.currentUserId) return;
+
+    this.wsEventsSub = this.realtime
+      .subscribeToChannelEvents(this.currentUserId)
       .subscribe((event) => {
         if (event.type === 'USER_STATUS_CHANGED') {
           const member = this.membersInfo.find(
@@ -138,6 +150,23 @@ export class ChannelsThread implements OnInit, OnDestroy{
           );
           if (member) member.online = event.payload.online;
           this.updateOnlineMembers();
+        }
+      });
+  }
+
+  // WS: mensajes del canal
+  private subscribeChannelMessages() {
+    if (!this.channelId) return;
+
+    this.wsChannelSub = this.realtime
+      .subscribeToChannelMessages(this.channelId)
+      .subscribe((msg) => {
+        // evitar duplicados si por alguna razón ya está
+        const exists = this.messages.some(m => m.id === msg.id);
+        if (!exists) {
+          this.messages.push(msg);
+          setTimeout(() => this.scrollToBottom(), 20);
+          this.cdr.detectChanges();
         }
       });
   }
@@ -153,11 +182,9 @@ export class ChannelsThread implements OnInit, OnDestroy{
     };
 
     this.channelMsgService.create(msg).subscribe({
-      next: (createdMsg) => {
-        this.messages.push(createdMsg);
+      next: () => {
+        // El mensaje llegará por WebSocket desde el backend.
         this.newMessage = '';
-        setTimeout(() => this.scrollToBottom(), 20);
-        this.cdr.detectChanges();
       },
       error: (err) => console.error('Error al enviar mensaje', err),
     });
@@ -171,7 +198,6 @@ export class ChannelsThread implements OnInit, OnDestroy{
   getSenderName(id: string): string {
     return id === this.currentUserId
       ? 'Tú'
-      // ✅ CORRECCIÓN 3: Si no encuentra el username, devuelve el ID.
       : this.membersInfo.find((u) => u.userId === id)?.username || id;
   }
 }
