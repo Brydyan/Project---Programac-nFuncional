@@ -37,4 +37,4 @@ mongo-data/
 redis-data/
 
 ### Archivos de configuración ###
-secrets/
+backend/secrets/*.json
