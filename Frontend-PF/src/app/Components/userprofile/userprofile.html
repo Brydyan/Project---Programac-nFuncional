@@ -1,132 +1,184 @@
 <div class="profile-container" *ngIf="!loading && user as u; else loadingTpl">
-  <h1 class="profile-main-title">Perfil del Usuario</h1>
-
-  <!-- INFORMACIÓN PERSONAL -->
-  <section class="profile-section">
-    <div class="section-header">
-      <h2>Información Personal</h2>
-      <button class="edit-btn" (click)="toggleEditProfile()">
-        {{ editingProfile ? 'Cancelar' : 'Editar Perfil' }}
-      </button>
-    </div>
-
-    <div class="profile-card">
-      <div class="profile-avatar-section">
-        <div class="avatar-wrapper">
-          <img [src]="avatarPreview || u.avatarUrl || u.photoUrl || 'https://i.pravatar.cc/150?u=' + u.id" alt="Avatar de usuario"
-            class="profile-avatar" />
-
-          <span class="status-indicator active"></span>
-
-          <!-- input de archivo solo cuando estás editando -->
-          <label *ngIf="editingProfile" class="avatar-edit-label">
-            Cambiar foto
-            <input type="file" accept="image/*" (change)="onAvatarSelected($event)" hidden />
-          </label>
+  <div class="profile-layout">
+    <div class="profile-main">
+      <!-- INFORMACIÓN PERSONAL -->
+      <section class="profile-section">
+        <div class="section-header">
+          <h2>Información Personal</h2>
+          <button class="edit-btn" (click)="toggleEditProfile()">
+            {{ editingProfile ? 'Cancelar' : 'Editar Perfil' }}
+          </button>
         </div>
 
-        <div class="profile-info">
-          <h3 class="profile-name" *ngIf="!editingProfile; else editNameTpl">
-            {{ u.displayName || u.username }}
-          </h3>
+        <div class="profile-card">
+        <div class="profile-avatar-section">
+          <div class="avatar-wrapper">
+            <img [src]="avatarPreview || u.avatarUrl || u.photoUrl || 'https://i.pravatar.cc/150?u=' + u.id" alt="Avatar de usuario"
+              class="profile-avatar" />
 
-          <ng-template #editNameTpl>
-            <input type="text" [(ngModel)]="u.displayName" class="profile-name-input" placeholder="Nombre visible" />
-          </ng-template>
+              <span class="status-indicator active"></span>
 
-          <span class="status-badge" *ngIf="!editingProfile; else editStatusTpl">
-            <span class="status-icon">✓</span>
-            {{ u.statusMessage || 'Activo' }}
-          </span>
+              <!-- input de archivo solo cuando estás editando -->
+              <label *ngIf="editingProfile" class="avatar-edit-label">
+                Cambiar foto
+                <input type="file" accept="image/*" (change)="onAvatarSelected($event)" hidden />
+              </label>
+            </div>
 
-          <ng-template #editStatusTpl>
-            <input type="text" [(ngModel)]="u.statusMessage" class="status-input"
-              placeholder="Estado (Disponible, Ocupado, etc.)" />
-          </ng-template>
-        </div>
-      </div>
+            <div class="profile-info">
+              <h3 class="profile-name" *ngIf="!editingProfile; else editNameTpl">
+                {{ u.displayName || u.username }}
+              </h3>
+
+              <ng-template #editNameTpl>
+                <input type="text" [(ngModel)]="u.displayName" class="profile-name-input" placeholder="Nombre visible" />
+              </ng-template>
+
+              <p class="profile-username" *ngIf="!editingProfile">
+                @{{ u.username }}
+              </p>
+
+              <span class="status-badge" *ngIf="!editingProfile; else editStatusTpl">
+                <span class="status-icon">✓</span>
+                {{ u.statusMessage || 'Activo' }}
+              </span>
+
+              <ng-template #editStatusTpl>
+                <input type="text" [(ngModel)]="u.statusMessage" class="status-input"
+                  placeholder="Estado (Disponible, Ocupado, etc.)" />
+              </ng-template>
+
+              <div class="username-edit" *ngIf="editingProfile">
+                <label class="mini-label">Nombre de usuario</label>
+                <input type="text" [(ngModel)]="u.username" class="profile-name-input" placeholder="Nombre de usuario" (ngModelChange)="onUsernameInput($event)" />
+                <div class="username-hints">
+                  <span *ngIf="usernameTouched && usernameChecking" class="hint-neutral">Comprobando disponibilidad...</span>
+                  <span *ngIf="usernameTouched && usernameAvailable === true" class="hint-ok">Nombre disponible</span>
+                  <span *ngIf="usernameTouched && usernameAvailable === false" class="hint-error">Nombre ya está en uso</span>
+                  <span *ngIf="usernameTouched && usernameRequired" class="hint-error">El nombre de usuario es obligatorio</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="photo-hint" *ngIf="editingProfile">
+            <span [ngClass]="{'hint-error': photoValidationState === 'error', 'hint-ok': photoValidationState === 'ok'}">
+              {{ photoValidationMessage ? photoValidationMessage : 'Máx. 10MB. Formatos: JPG, PNG, GIF, WEBP.' }}
+            </span>
+          </div>
 
       <div class="bio-section">
         <h4 class="bio-label">Biografía</h4>
 
         <p class="bio-text" *ngIf="!editingProfile; else editBioTpl">
           {{ u.bio || 'Sin biografía todavía. Puedes añadir una aquí.' }}
-        </p>
+            </p>
 
-        <ng-template #editBioTpl>
-          <textarea [(ngModel)]="u.bio" rows="3" class="bio-textarea" placeholder="Escribe algo sobre ti..."></textarea>
-        </ng-template>
-      </div>
-    </div>
-  </section>
+            <ng-template #editBioTpl>
+              <textarea [(ngModel)]="u.bio" rows="3" class="bio-textarea" placeholder="Escribe algo sobre ti..."></textarea>
+            </ng-template>
+          </div>
+        </div>
 
-  <!-- INFORMACIÓN DE CONTACTO -->
-  <section class="profile-section">
-    <div class="section-header">
-      <h2>Información de Contacto</h2>
-      <button class="edit-btn" (click)="toggleEditContact()">
-        {{ editingContact ? 'Cancelar' : 'Editar Contacto' }}
-      </button>
-    </div>
+        <div class="action-buttons" *ngIf="editingProfile">
+          <button class="btn-cancel" type="button" (click)="cancelEdits()">Cancelar</button>
+          <button class="btn-primary" type="button" (click)="saveProfile()">Guardar cambios</button>
+        </div>
+      </section>
 
-    <div class="profile-card">
-      <div class="contact-item">
-        <span class="contact-icon">📧</span>
-        <div class="contact-details">
-          <p class="contact-label">Correo Electrónico</p>
+      <!-- INFORMACIÓN DE CONTACTO -->
+      <section class="profile-section">
+        <div class="section-header">
+          <h2>Información de Contacto</h2>
+          <button class="edit-btn" (click)="toggleEditContact()">
+            {{ editingContact ? 'Cancelar' : 'Editar Contacto' }}
+          </button>
+        </div>
 
-          <p class="contact-value" *ngIf="!editingContact; else editEmailTpl">
-            {{ u.email }}
+        <div class="profile-card">
+          <div class="contact-item">
+            <span class="contact-icon">📧</span>
+            <div class="contact-details">
+              <p class="contact-label">Correo Electrónico</p>
+
+              <p class="contact-value" *ngIf="!editingContact; else editEmailTpl">
+                {{ u.email }}
+              </p>
+
+              <ng-template #editEmailTpl>
+                <input type="email" [(ngModel)]="u.email" class="contact-input" placeholder="correo@ejemplo.com" />
+              </ng-template>
+            </div>
+          </div>
+
+          <div class="contact-item">
+            <span class="contact-icon">📱</span>
+            <div class="contact-details">
+              <p class="contact-label">Teléfono</p>
+              <!-- aún no existe phone en el modelo, mostramos placeholder -->
+              <p class="contact-value">No registrado</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-buttons" *ngIf="editingContact">
+          <button class="btn-cancel" type="button" (click)="cancelEdits()">Cancelar</button>
+          <button class="btn-primary" type="button" (click)="saveProfile()">Guardar cambios</button>
+        </div>
+      </section>
+
+      <!-- PREFERENCIAS (solo info, editable desde Configuración) -->
+      <section class="profile-section">
+        <div class="section-header">
+          <h2>Preferencias</h2>
+          <button class="edit-btn" (click)="onEditPreferences()">
+            Abrir Configuración
+          </button>
+        </div>
+
+        <div class="profile-card">
+          <p class="preferences-note">
+            Las preferencias de notificaciones, tema e idioma se editan desde la
+            pantalla de Configuración.
           </p>
-
-          <ng-template #editEmailTpl>
-            <input type="email" [(ngModel)]="u.email" class="contact-input" placeholder="correo@ejemplo.com" />
-          </ng-template>
         </div>
-      </div>
+      </section>
 
-      <div class="contact-item">
-        <span class="contact-icon">📱</span>
-        <div class="contact-details">
-          <p class="contact-label">Teléfono</p>
-          <!-- aún no existe phone en el modelo, mostramos placeholder -->
-          <p class="contact-value">No registrado</p>
-        </div>
+      <div class="action-buttons" *ngIf="!editingProfile && !editingContact">
+        <button class="btn-primary" type="button" (click)="onBackToChat()">Volver a Chat</button>
       </div>
     </div>
-  </section>
 
-  <!-- PREFERENCIAS (solo info, editable desde Configuración) -->
-  <section class="profile-section">
-    <div class="section-header">
-      <h2>Preferencias</h2>
-      <button class="edit-btn" (click)="onEditPreferences()">
-        Abrir Configuración
-      </button>
-    </div>
+    <!-- PREVIEW ASIDE -->
+    <aside class="profile-preview">
+      <div class="preview-card">
+        <h3 class="preview-title">Previsualización del Perfil</h3>
+        <p class="preview-subtitle">Así te verán los demás.</p>
 
-    <div class="profile-card">
-      <p class="preferences-note">
-        Las preferencias de notificaciones, tema e idioma se editan desde la
-        pantalla de Configuración.
-      </p>
-    </div>
-  </section>
+        <div class="preview-profile">
+          <div class="preview-avatar-wrapper">
+            <img
+              [src]="avatarPreview || u.avatarUrl || u.photoUrl || 'https://i.pravatar.cc/150?u=' + u.id"
+              alt="Avatar"
+              class="preview-avatar"
+            />
+            <span class="preview-status-dot" [class.online]="(u.statusMessage || 'Activo').toLowerCase() === 'online' || (u.statusMessage || 'activo').toLowerCase() === 'activo'"></span>
+          </div>
 
-  <!-- BOTONES DE ACCIÓN -->
-  <div class="action-buttons" *ngIf="editingProfile || editingContact">
-    <button class="btn-cancel" type="button" (click)="cancelEdits()">Cancelar</button>
-    <button class="btn-primary" type="button" (click)="saveProfile()">Guardar cambios</button>
-  </div>
+          <h4 class="preview-username">{{ u.displayName || u.username }}</h4>
+          <span class="preview-status">{{ u.statusMessage || 'Activo' }}</span>
 
-  <div class="action-buttons" *ngIf="!editingProfile && !editingContact">
-    <button class="btn-primary" type="button" (click)="onBackToChat()">Volver a Chat</button>
+          <p class="preview-note">
+            Tu perfil se verá así para otros usuarios. Los cambios se aplicarán al guardar.
+          </p>
+        </div>
+      </div>
+    </aside>
   </div>
 </div>
 
 <ng-template #loadingTpl>
   <div class="profile-container">
-    <h1 class="profile-main-title">Perfil del Usuario</h1>
     <p *ngIf="loading">Cargando perfil...</p>
     <p *ngIf="!loading && error" class="error-text">{{ error }}</p>
   </div>

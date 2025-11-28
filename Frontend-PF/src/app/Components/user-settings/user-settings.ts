@@ -17,6 +17,8 @@ import { UserAvailabilityService } from '../../Service/UserAvailabilityService';
   styleUrls: ['./user-settings.scss']
 })
 export class UserSettings implements OnInit {
+  // El bloque de perfil se deshabilitó en la vista de settings; dejamos la lógica intacta pero sin ejecutar.
+  private readonly profileSectionEnabled = false;
   // Perfil del Usuario
   username = 'UsuarioPureChat';
   statusOptions = ['Online', 'Offline', 'Ausente', 'Ocupado'];
@@ -137,6 +139,9 @@ export class UserSettings implements OnInit {
   // Al inicializar el componente, cargar la sesión (si existe) y leer el usuario
   // para obtener `photoUrl` persistido en el backend.
   ngOnInit(): void {
+    if (!this.profileSectionEnabled) {
+      return; // perfil deshabilitado en settings, evitar llamadas y validaciones innecesarias
+    }
     try {
       const cur = this.sessionService.currentSession;
       // If there's a cached session, populate username and profile image immediately

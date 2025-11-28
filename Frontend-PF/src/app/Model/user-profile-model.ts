@@ -7,4 +7,5 @@ export interface UserProfile {
   statusMessage?: string;
   avatarUrl?: string;
   photoUrl?: string;
+  photoPath?: string;
 }

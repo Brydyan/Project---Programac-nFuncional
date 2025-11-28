@@ -3,7 +3,7 @@
   <div class="settings-main">
     <h1 class="settings-title">Configuración General</h1>
 
-    <!-- PERFIL DEL USUARIO -->
+    <!-- PERFIL DEL USUARIO 
     <section class="settings-section">
       <div class="section-header">
         <span class="section-icon">👤</span>
@@ -56,7 +56,7 @@
           </span>
         </div>
       </div>
-    </section>
+    </section>-->
 
     <!-- NOTIFICACIONES - SECCIÓN 1 -->
     <section class="settings-section">
@@ -296,46 +296,6 @@
       Restablecer a valores predeterminados
     </button>
   </div>
-
-  <!-- COLUMNA DERECHA: PREVIEW -->
-  <aside class="settings-preview">
-    <div class="preview-card">
-      <h3 class="preview-title">Previsualización del Perfil</h3>
-      <p class="preview-subtitle">Así te verán los demás.</p>
-
-      <div class="preview-profile">
-        <div class="preview-avatar-wrapper">
-          <img 
-            [src]="profileImage || 'https://i.pravatar.cc/150?img=12'" 
-            alt="Avatar" 
-            class="preview-avatar"
-          />
-          <span class="preview-status-dot" [class.online]="selectedStatus === 'Online'"></span>
-        </div>
-
-        <h4 class="preview-username">{{ username }}</h4>
-        <span class="preview-status">{{ selectedStatus }}</span>
-
-        <p class="preview-note">
-          Tu perfil se verá así para otros usuarios. Los cambios se aplicarán al guardar.
-        </p>
-      </div>
-
-      <div *ngIf="photoValidationState === 'error' || usernameAvailable === false || usernameRequired === true" style="margin-top:8px; color:red; font-weight:600">
-        Cambios no válidos
-      </div>
-
-      <button *ngIf="!(photoValidationState === 'error' || usernameAvailable === false || usernameRequired === true)" type="button" class="btn-save" (click)="saveChanges()" [disabled]="uploadingPhoto" [attr.aria-busy]="uploadingPhoto">
-        <span *ngIf="!uploadingPhoto" class="btn-icon">💾</span>
-        <span *ngIf="uploadingPhoto" class="btn-icon">⏳</span>
-        <span *ngIf="!uploadingPhoto"> Guardar Cambios</span>
-        <span *ngIf="uploadingPhoto"> Guardando...</span>
-      </button>
-      <div *ngIf="uploadMessage" style="margin-top:10px">
-        <span [ngStyle]="{ color: uploadMessageType === 'error' ? 'red' : (uploadMessageType === 'success' ? 'green' : '#333') }">{{ uploadMessage }}</span>
-      </div>
-    </div>
-  </aside>
 </div>
 
 <!-- Modal confirmar contraseña -->
