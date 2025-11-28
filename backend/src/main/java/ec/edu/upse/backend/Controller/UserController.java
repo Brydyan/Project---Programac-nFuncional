@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -107,6 +108,21 @@ public class UserController {
             return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
         } catch (Exception e) {
             logger.error("Error uploading user photo for userId={}", id, e);
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+
+    // PATCH parcial para actualizar campos del perfil del usuario (username, displayName, status, preferences, photoUrl/photoPath)
+    @PatchMapping(value = "/{id}/profile", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserEntity> updateProfile(@PathVariable String id, @RequestBody java.util.Map<String, Object> body) {
+        try {
+            UserEntity updated = userService.updateUserProfile(id, body);
+            return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException ia) {
+            logger.warn("Invalid profile update for userId={}: {}", id, ia.getMessage());
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            logger.error("Error updating profile for userId={}", id, e);
             return ResponseEntity.status(500).body(null);
         }
     }

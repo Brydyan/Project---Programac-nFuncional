@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../Service/session.service';
@@ -6,6 +6,8 @@ import { UserService } from '../../Service/user.service';
 import { AuthService } from '../../Service/AuthService';
 import { ConversationEventsService } from '../../Service/conversation-events.service';
 import { finalize, take } from 'rxjs/operators';
+import { Subject, Subscription } from 'rxjs';
+import { UserAvailabilityService } from '../../Service/UserAvailabilityService';
 
 @Component({
   selector: 'app-user-settings',
@@ -32,6 +34,14 @@ export class UserSettings implements OnInit {
   // Mensajes generales para mostrar al usuario (success/error/info)
   uploadMessage: string | null = null;
   uploadMessageType: 'success' | 'error' | 'info' | null = null;
+
+  // Username availability (real-time)
+  usernameAvailable: boolean | null = null;
+  usernameRequired: boolean = false;
+  usernameChecking = false;
+  private usernameCheck$ = new Subject<string>();
+  private subs = new Subscription();
+  private sessionSub?: Subscription;
 
   // Notificaciones - Sección 1
   notificationsSettings = {
@@ -127,11 +137,25 @@ export class UserSettings implements OnInit {
   ngOnInit(): void {
     try {
       const cur = this.sessionService.currentSession;
-      if (cur && cur.userId) {
-        // ya tenemos sesión en memoria: pedir datos del usuario
-        this.loadUserProfileImage(cur.userId);
-        return;
+      // If there's a cached session, populate username and profile image immediately
+      if (cur) {
+        if (cur.username) this.username = cur.username;
+        else if (cur.displayName) this.username = cur.displayName;
+        this.profileImage = cur.photoUrl || cur.profileImage || this.profileImage;
+        // assume current username valid for the logged-in user
+        this.usernameAvailable = true;
       }
+
+      // subscribe to session changes so the component updates when session is refreshed elsewhere
+      this.sessionSub = this.sessionService.session$.subscribe((s: any) => {
+        if (!s) return;
+        if (s.username) this.username = s.username;
+        else if (s.displayName) this.username = s.displayName;
+        this.profileImage = s.photoUrl || s.profileImage || this.profileImage;
+        this.usernameAvailable = true;
+        this.usernameRequired = false;
+        this.cdr.detectChanges();
+      });
 
       const token = localStorage.getItem('token');
       if (token) {
@@ -140,7 +164,12 @@ export class UserSettings implements OnInit {
           next: (s: any) => {
             const uid = s?.userId;
             if (uid) {
-              this.loadUserProfileImage(uid);
+              // only request full user entity if we don't already have username or photoUrl
+              const haveName = !!(this.username && this.username !== 'UsuarioPureChat');
+              const havePhoto = !!(this.profileImage && !this.profileImage.includes('pravatar'));
+              if (!haveName || !havePhoto) {
+                this.loadUserProfileImage(uid);
+              }
             }
           },
           error: (e: any) => {
@@ -151,6 +180,27 @@ export class UserSettings implements OnInit {
     } catch (e) {
       console.warn('[UserSettings] ngOnInit error', e);
     }
+
+    // subscribe to username availability checks (debounced/cached inside service)
+    const sub = this.usernameCheck$.subscribe(name => {
+      this.usernameChecking = true;
+      this.userAvailability.checkUsernameAvailability(name).pipe(take(1), finalize(() => {
+        this.usernameChecking = false;
+        this.cdr.detectChanges();
+      })).subscribe(av => {
+        this.usernameAvailable = av;
+        this.cdr.detectChanges();
+      }, err => {
+        this.usernameAvailable = false;
+        this.cdr.detectChanges();
+      });
+    });
+    this.subs.add(sub);
+  }
+
+  ngOnDestroy(): void {
+    try { this.subs.unsubscribe(); } catch (e) { /* ignore */ }
+    try { if (this.sessionSub) { this.sessionSub.unsubscribe(); } } catch (e) { /* ignore */ }
   }
 
   private loadUserProfileImage(userId: string) {
@@ -164,6 +214,13 @@ export class UserSettings implements OnInit {
           this.profileImage = newUrl;
           this.cdr.detectChanges();
         }
+        // set real username from loaded user
+        if (u?.username) {
+          this.username = u.username;
+          // assume current username valid for the user
+          this.usernameAvailable = true;
+          this.usernameRequired = false;
+        }
       },
       error: (err: any) => {
         console.warn('[UserSettings] error loading user by id', err);
@@ -171,11 +228,21 @@ export class UserSettings implements OnInit {
     });
   }
 
+  onUsernameInput(value: string) {
+    this.username = value || '';
+    this.usernameAvailable = null;
+    // mark required state
+    this.usernameRequired = !this.username || this.username.trim().length === 0;
+    if (this.usernameRequired) { this.cdr.detectChanges(); return; }
+    this.usernameCheck$.next(this.username.trim());
+  }
+
   // -----------------------
   // Seguridad / Sesiones
   // -----------------------
   private sessionService = inject(SessionService);
   private userService = inject(UserService);
+  private userAvailability = inject(UserAvailabilityService);
   private authService = inject(AuthService);
   private convEvents = inject(ConversationEventsService);
   private cdr = inject(ChangeDetectorRef);
@@ -301,8 +368,14 @@ export class UserSettings implements OnInit {
 
   saveChanges() {
     if (!this.username.trim()) {
-      alert('El nombre de usuario es obligatorio.');
+      // mark required and show error message instead of alert
+      this.usernameRequired = true;
+      this.uploadMessage = 'El nombre de usuario es obligatorio.';
+      this.uploadMessageType = 'error';
+      this.cdr.detectChanges();
       return;
+    } else {
+      this.usernameRequired = false;
     }
     
     // Simular guardado de configuración
@@ -321,6 +394,19 @@ export class UserSettings implements OnInit {
     console.log('Guardando configuración:', settings);
     
     if (!confirm('¿Guardar cambios realizados?')) {
+      return;
+    }
+
+    // Prevent saving if username is known to be unavailable
+    if (this.usernameAvailable === false) {
+      const doNotifyAndMessage = (msg = 'Cambios guardados.', type: 'success' | 'error' | 'info' = 'success') => {
+        try { this.convEvents.notifyRefresh(); } catch (e) { /* ignore */ }
+        this.uploadMessage = msg;
+        this.uploadMessageType = type;
+        setTimeout(() => { this.uploadMessage = null; this.uploadMessageType = null; this.cdr.detectChanges(); }, 6000);
+        this.cdr.detectChanges();
+      };
+      doNotifyAndMessage('El nombre de usuario no está disponible.', 'error');
       return;
     }
 
@@ -356,32 +442,74 @@ export class UserSettings implements OnInit {
               this.profileImage = newUrl;
             }
 
-            // Refrescar sesión para propagar la nueva foto en toda la app
-            const token = localStorage.getItem('token');
-            if (token) {
-              this.sessionService.getByToken(token).pipe(take(1)).subscribe({
-                next: (s: any) => { doNotifyAndMessage('Cambios guardados. Foto subida.', 'success'); },
-                error: (e: any) => { console.warn('[UserSettings] session refresh failed', e); doNotifyAndMessage('Cambios guardados (error al refrescar sesión).', 'info'); }
-              });
-            } else {
-              doNotifyAndMessage('Cambios guardados. Foto subida.', 'success');
-            }
+            // After upload, also update profile fields (username/status). Use returned fields if available
+            const payload: any = { username: this.username, status: this.selectedStatus };
+            if (res?.photoUrl) payload.photoUrl = res.photoUrl;
+            if (res?.photoPath) payload.photoPath = res.photoPath;
 
-            this.selectedPhotoFile = null;
-            this.uploadingPhoto = false;
-            this.cdr.detectChanges();
+            this.userService.updateProfile(uid, payload).pipe(take(1)).subscribe({
+              next: (updated: any) => {
+                // refresh session and notify
+                const token = localStorage.getItem('token');
+                if (token) {
+                  this.sessionService.getByToken(token).pipe(take(1)).subscribe({
+                    next: (s: any) => { doNotifyAndMessage('Cambios guardados. Foto subida.', 'success'); },
+                    error: (e: any) => { console.warn('[UserSettings] session refresh failed', e); doNotifyAndMessage('Cambios guardados (error al refrescar sesión).', 'info'); }
+                  });
+                } else {
+                  doNotifyAndMessage('Cambios guardados. Foto subida.', 'success');
+                }
+                this.selectedPhotoFile = null;
+                this.uploadingPhoto = false;
+                this.cdr.detectChanges();
+              },
+              error: (err: any) => {
+                console.error('Error actualizando perfil', err);
+                this.uploadingPhoto = false;
+                const serverMsg = err?.error?.message || err?.message || 'Error actualizando perfil. Intenta nuevamente.';
+                doNotifyAndMessage(serverMsg, 'error');
+              }
+            });
           },
           error: (err: any) => {
             console.error('Error subiendo la foto', err);
             this.uploadingPhoto = false;
-            doNotifyAndMessage('Error subiendo la foto. Intenta nuevamente.', 'error');
+            const serverMsg = err?.error?.message || err?.message || 'Error subiendo la foto. Intenta nuevamente.';
+            doNotifyAndMessage(serverMsg, 'error');
           }
         });
       return;
     }
 
-    // Si no hay foto nueva, simplemente notificar guardado de otros ajustes.
-    doNotifyAndMessage('Cambios guardados.', 'success');
+    // Si no hay foto nueva, persistir los campos del perfil (username/status)
+    const uidNoPhoto = userId;
+    if (!uidNoPhoto) {
+      doNotifyAndMessage('No se pudo determinar el usuario actual.', 'error');
+      return;
+    }
+
+    const payloadNoPhoto: any = { username: this.username, status: this.selectedStatus };
+    // include current profileImage if present (not strictly necessary)
+    if (this.profileImage) payloadNoPhoto.profileImage = this.profileImage;
+
+    this.userService.updateProfile(uidNoPhoto, payloadNoPhoto).pipe(take(1)).subscribe({
+      next: (updated: any) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+          this.sessionService.getByToken(token).pipe(take(1)).subscribe({
+            next: (s: any) => { doNotifyAndMessage('Cambios guardados.', 'success'); },
+            error: (e: any) => { console.warn('[UserSettings] session refresh failed', e); doNotifyAndMessage('Cambios guardados (error al refrescar sesión).', 'info'); }
+          });
+        } else {
+          doNotifyAndMessage('Cambios guardados.', 'success');
+        }
+      },
+      error: (err: any) => {
+        console.error('Error actualizando perfil (sin foto)', err);
+        const serverMsg = err?.error?.message || err?.message || 'Error actualizando perfil. Intenta nuevamente.';
+        doNotifyAndMessage(serverMsg, 'error');
+      }
+    });
   }
 
   resetDefaults() {

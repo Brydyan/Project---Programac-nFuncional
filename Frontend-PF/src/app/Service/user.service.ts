@@ -49,4 +49,9 @@ export class UserService {
     return this.http.post<any>(`${this.baseUrl}/${userId}/photo-upload`, fd);
   }
 
+  // Partial profile update (username, displayName, status, preferences, photoUrl/photoPath)
+  updateProfile(userId: string, payload: any) {
+    return this.http.patch<any>(`${this.baseUrl}/${userId}/profile`, payload);
+  }
+
 }

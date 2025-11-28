@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import ec.edu.upse.backend.Domain.UserValidator;
 import ec.edu.upse.backend.Entity.UserEntity;
@@ -217,6 +217,49 @@ public class UserService {
             return saved;
         }
         logger.warn("updateUserPhoto: user not found for userId={}", userId);
+        return null;
+    }
+
+    // Update partial profile fields (username, displayName, status, preferences)
+    public UserEntity updateUserProfile(String userId, java.util.Map<String, Object> updates) {
+        Optional<UserEntity> aux = userRepository.findById(userId);
+        if (aux.isPresent()) {
+            UserEntity u = aux.get();
+
+            if (updates.containsKey("username")) {
+                String raw = (String) updates.get("username");
+                String normalized = UserValidator.normalizarUsername(raw);
+                if (normalized == null) throw new IllegalArgumentException("Username inválido");
+                // check uniqueness (exclude current user)
+                Optional<UserEntity> existing = userRepository.findByUsername(normalized);
+                if (existing.isPresent() && !existing.get().getId().equals(userId)) {
+                    throw new IllegalArgumentException("Username ya está en uso");
+                }
+                u.setUsername(normalized);
+            }
+
+            if (updates.containsKey("displayName")) {
+                u.setDisplayName((String) updates.get("displayName"));
+            }
+
+            if (updates.containsKey("status")) {
+                u.setStatus((String) updates.get("status"));
+            }
+
+            if (updates.containsKey("photoUrl")) {
+                u.setPhotoUrl((String) updates.get("photoUrl"));
+            }
+            if (updates.containsKey("photoPath")) {
+                u.setPhotoPath((String) updates.get("photoPath"));
+            }
+
+            if (updates.containsKey("preferences")) {
+                u.setPreferences((java.util.Map) updates.get("preferences"));
+            }
+
+            UserEntity saved = userRepository.save(u);
+            return saved;
+        }
         return null;
     }
 
