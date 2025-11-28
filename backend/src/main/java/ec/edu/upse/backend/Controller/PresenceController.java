@@ -1,6 +1,8 @@
 package ec.edu.upse.backend.Controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -66,6 +68,30 @@ public class PresenceController {
         if (anyInactive) return ResponseEntity.ok("INACTIVE");
 
         return ResponseEntity.ok("OFFLINE");
+    }
+
+    // BULK: devuelve un mapa { userId -> status }
+    @PostMapping("/realtime/bulk")
+    public ResponseEntity<Map<String, String>> getRealtimeBulk(@RequestBody List<String> userIds) {
+        Map<String, String> result = new HashMap<>();
+        if (userIds == null || userIds.isEmpty()) return ResponseEntity.ok(result);
+
+        for (String uid : userIds) {
+            var sessions = realtimePresence.getUserSessionsStatus(uid);
+            String status = "OFFLINE";
+            if (sessions != null && !sessions.isEmpty()) {
+                boolean anyOnline = sessions.values().stream().anyMatch(v -> "ONLINE".equalsIgnoreCase(v));
+                if (anyOnline) {
+                    status = "ONLINE";
+                } else {
+                    boolean anyInactive = sessions.values().stream().anyMatch(v -> "INACTIVE".equalsIgnoreCase(v));
+                    if (anyInactive) status = "INACTIVE";
+                }
+            }
+            result.put(uid, status);
+        }
+
+        return ResponseEntity.ok(result);
     }
 
     // UPDATE: cambiar estado ONLINE/OFFLINE/AWAY

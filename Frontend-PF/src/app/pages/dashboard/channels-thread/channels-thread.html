@@ -39,7 +39,9 @@
           <img [src]="m.avatarUrl || 'https://i.pravatar.cc/50?u=' + m.userId" [alt]="m.username" />
         </div>
         <span class="member-name">{{ m.username }}</span>
-        <span class="online-dot" [class.online]="m.online"></span>
+        <span class="online-dot"
+          [class.online]="m.status === 'ONLINE' || m.online"
+          [class.inactive]="m.status === 'INACTIVE'"></span>
       </div>
     </aside>
 

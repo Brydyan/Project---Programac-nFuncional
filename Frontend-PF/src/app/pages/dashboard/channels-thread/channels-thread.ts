@@ -130,42 +130,47 @@ export class ChannelsThread implements OnInit, OnDestroy {
         id,
         userId: id,
         username: `Usuario ${id}`, // placeholder mientras llega el username real
-        online: false
+        online: false,
+        status: 'OFFLINE'
       }));
 
       this.updateOnlineMembers();
 
       // WS de eventos (online/offline)
       this.subscribeRealtimeEvents();
-
-      // --- Llamada optimizada para obtener usernames reales ---
+      // Iniciar polling de presencia cada 5 segundos (inmediatamente aunque no tengamos usernames)
       if (channel.members.length > 0) {
+        this.presenceSub?.unsubscribe();
+        this.presenceSub = interval(5000)
+          .pipe(
+            startWith(0),
+            switchMap(() => this.presenceService.getBulkPresence(channel.members))
+          )
+          .subscribe((presenceMap: Record<string, any>) => {
+            // Debug: mostrar el mapa recibido para verificar shape/keys
+            console.debug('[Presence] bulk presence received:', presenceMap);
+            this.membersInfo.forEach(m => {
+              // intentar varias claves (userId o id) por compatibilidad
+              const raw = presenceMap[m.userId] ?? presenceMap[m.id] ?? presenceMap[String(m.userId)] ?? null;
+              const normalized = this.normalizePresenceValue(raw);
+              m.status = normalized.status as any;
+              m.online = normalized.online;
+            });
+            this.updateOnlineMembers();
+            this.cdr.detectChanges();
+          });
+
+        // --- Llamada optimizada para obtener usernames reales ---
         this.userService.getUsersByIds(channel.members).subscribe(users => {
-          // Reemplazar placeholders con los nombres reales y avatares
+          // Reemplazar placeholders con los nombres reales y avatares (preservando status/online)
           this.membersInfo = this.membersInfo.map(m => {
             const u = users.find(user => user.id === m.userId);
             return {
               ...m,
               username: u?.username || m.username,
-              avatarUrl: u?.avatarUrl || u?.photoUrl || undefined
+              avatarUrl: u?.avatarUrl || u?.photoUrl || m.avatarUrl
             };
           });
-
-          // Iniciar polling de presencia cada 5 segundos
-          this.presenceSub?.unsubscribe();
-          this.presenceSub = interval(5000)
-            .pipe(
-              startWith(0),
-              switchMap(() => this.presenceService.getBulkPresence(channel.members))
-            )
-            .subscribe((presenceMap: Record<string, string>) => {
-              this.membersInfo.forEach(m => {
-                m.online = presenceMap[m.userId] === 'ONLINE';
-              });
-              this.updateOnlineMembers();
-              this.cdr.detectChanges();
-            });
-
           this.cdr.detectChanges(); // actualizar la vista
         });
       }
@@ -173,7 +178,7 @@ export class ChannelsThread implements OnInit, OnDestroy {
   }
 
   private updateOnlineMembers() {
-    this.onlineMembers = this.membersInfo.filter((m) => m.online);
+    this.onlineMembers = this.membersInfo.filter((m) => m.status === 'ONLINE' || m.online);
     this.cdr.detectChanges();
   }
 
@@ -185,13 +190,45 @@ export class ChannelsThread implements OnInit, OnDestroy {
       .subscribeToChannelEvents(this.currentUserId)
       .subscribe((event) => {
         if (event.type === 'USER_STATUS_CHANGED') {
+          console.debug('[Presence] WS event:', event);
           const member = this.membersInfo.find(
-            (m) => m.userId === event.payload.userId
+            (m) => m.userId === event.payload.userId || m.id === event.payload.userId
           );
-          if (member) member.online = event.payload.online;
+          if (member) {
+            const toNormalize = event.payload.status ?? event.payload.online ?? event.payload;
+            const normalized = this.normalizePresenceValue(toNormalize);
+            member.status = normalized.status as any;
+            member.online = normalized.online;
+          }
           this.updateOnlineMembers();
         }
       });
+  }
+
+  // Normaliza distintos formatos de respuesta de presencia
+  private normalizePresenceValue(raw: any): { status: 'ONLINE' | 'INACTIVE' | 'OFFLINE', online: boolean } {
+    if (raw == null) return { status: 'OFFLINE', online: false };
+    if (typeof raw === 'string') {
+      const s = raw.trim().toUpperCase();
+      return { status: (s === 'ONLINE' || s === 'INACTIVE') ? s as any : 'OFFLINE', online: s === 'ONLINE' };
+    }
+    if (typeof raw === 'boolean') {
+      return { status: raw ? 'ONLINE' : 'OFFLINE', online: raw };
+    }
+    if (typeof raw === 'object') {
+      if (raw.status) {
+        const s = String(raw.status).trim().toUpperCase();
+        return { status: (s === 'ONLINE' || s === 'INACTIVE') ? s as any : 'OFFLINE', online: s === 'ONLINE' };
+      }
+      if (typeof raw.online === 'boolean') {
+        return { status: raw.online ? 'ONLINE' : 'OFFLINE', online: raw.online };
+      }
+      if (raw.state) {
+        const s = String(raw.state).trim().toUpperCase();
+        return { status: (s === 'ONLINE' || s === 'INACTIVE') ? s as any : 'OFFLINE', online: s === 'ONLINE' };
+      }
+    }
+    return { status: 'OFFLINE', online: false };
   }
 
   // WS: mensajes del canal

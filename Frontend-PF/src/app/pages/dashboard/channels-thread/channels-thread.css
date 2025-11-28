@@ -129,12 +129,16 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: gray;
+  background: #4b5563; /* offline by default */
   flex-shrink: 0;
 }
 
 .online-dot.online {
   background: #6edc6e;
+}
+
+.online-dot.inactive {
+  background: #fbbf24; /* amarillo para ausente */
 }
 
 .chat-input {

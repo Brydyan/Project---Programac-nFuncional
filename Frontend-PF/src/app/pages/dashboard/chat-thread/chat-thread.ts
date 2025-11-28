@@ -63,6 +63,7 @@ export class ChatThread implements OnInit, OnDestroy {
   private activityTimestamp = 0;
   private inactivityTimer: any = null;
   private activityListener = this.onUserActivity.bind(this);
+  private visibilityListener = this.onVisibilityChange.bind(this);
   private beforeUnloadListener = this.onBeforeUnload.bind(this);
 
   ngOnInit(): void {
@@ -93,6 +94,7 @@ export class ChatThread implements OnInit, OnDestroy {
       document.addEventListener('keydown', this.activityListener);
       document.addEventListener('mousemove', this.activityListener);
       document.addEventListener('touchstart', this.activityListener);
+      document.addEventListener('visibilitychange', this.visibilityListener);
       window.addEventListener('beforeunload', this.beforeUnloadListener);
     });
   }
@@ -107,6 +109,7 @@ export class ChatThread implements OnInit, OnDestroy {
     document.removeEventListener('keydown', this.activityListener);
     document.removeEventListener('mousemove', this.activityListener);
     document.removeEventListener('touchstart', this.activityListener);
+    document.removeEventListener('visibilitychange', this.visibilityListener);
     window.removeEventListener('beforeunload', this.beforeUnloadListener);
     this.stopInactivityTimer();
   }
@@ -291,6 +294,23 @@ export class ChatThread implements OnInit, OnDestroy {
     });
   }
 
+  private onVisibilityChange(): void {
+    const session = this.sessionService.currentSession;
+    const sid = session?.sessionId;
+    if (!sid) return;
+    if (document.hidden) {
+      // Pestaña/ventana en segundo plano -> INACTIVE inmediato
+      this.sessionService.markInactive(sid).subscribe({ error: (e) => console.error('markInactive on hide', e) });
+      this.stopInactivityTimer();
+    } else {
+      // De vuelta al frente -> ONLINE y reiniciar timers
+      this.sessionService.markOnline(sid).subscribe({
+        next: () => this.recordActivity(),
+        error: (e) => console.error('markOnline on show', e)
+      });
+    }
+  }
+
   private recordActivity(): void {
     this.activityTimestamp = Date.now();
     this.stopInactivityTimer();
@@ -345,29 +365,19 @@ export class ChatThread implements OnInit, OnDestroy {
 
     // Intentar notificar logout para marcar como Fuera de linea
     try {
-      // Al cerrar la pestaña, invalidamos la sesión (logout) para que el estado sea OFFLINE
+      // Al cerrar la pestaña, cerramos sesión para que el estado sea OFFLINE
       const token = localStorage.getItem('token');
-      let url = `/app/v1/sessions/inactive/${session.sessionId}`;
-      if (token) {
-        url += `?token=${encodeURIComponent(token)}`;
-      }
+      let url = `/app/v1/sessions/logout/${session.sessionId}`;
+      const payload = token ? JSON.stringify({ token }) : '';
 
+      // Preferir sendBeacon para no bloquear el cierre de pestaña
       if (navigator && (navigator as any).sendBeacon) {
-        try {
-          const payload = token ? JSON.stringify({ token }) : '';
-          (navigator as any).sendBeacon(url, payload);
-        } catch (e) {
-          // fallback síncrono
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', `/app/v1/sessions/inactive/${session.sessionId}`, false);
-          if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-          try { xhr.send(null); } catch (e) { /* ignore */ }
-        }
+        (navigator as any).sendBeacon(url, payload);
       } else {
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `/app/v1/sessions/inactive/${session.sessionId}`, false);
+        xhr.open('POST', url, false);
         if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        try { xhr.send(null); } catch (e) { /* ignore */ }
+        try { xhr.send(payload); } catch (e) { /* ignore */ }
       }
     } catch (e) {
       // ignore

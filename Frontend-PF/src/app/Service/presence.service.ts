@@ -14,6 +14,7 @@ export class PresenceService {
     }
 
     getUserPresence(userId: string): Observable<string> {
-        return this.http.get<string>(`${this.api}/realtime/${userId}`);
+        // El endpoint devuelve texto simple (ONLINE/INACTIVE/OFFLINE), por eso pedimos responseType 'text'
+        return this.http.get(`${this.api}/realtime/${userId}`, { responseType: 'text' as const });
     }
 }
