@@ -24,4 +24,19 @@ public class MessageValidator {
         }
         return content.trim();
     }
+
+    public static ValidationResult<String> validarYNormalizarContenido(String content) {
+    if (!esContenidoValido(content)) {
+            return ValidationResult.error("El mensaje está vacío.");
+        }
+
+        return ValidationResult.ok(content.trim());
+    }
+
+    public static ValidationResult<String> prepararMensajeUsuario(String input) {
+        return validarYNormalizarContenido(
+            UserValidator.validarYNormalizarUsername(input).getValue()
+        );
+    }
+
 }

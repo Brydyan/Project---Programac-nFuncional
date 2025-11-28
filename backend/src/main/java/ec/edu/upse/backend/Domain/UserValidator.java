@@ -73,4 +73,15 @@ public class UserValidator {
         }
         return email.trim().toLowerCase();
     }
+
+    public static ValidationResult<String> validarYNormalizarUsername(String username) {
+    if (!esUsernameValido(username)) {
+        return ValidationResult.error(
+            "Nombre de usuario inválido: 3-20 caracteres."
+        );
+    }
+
+    return ValidationResult.ok(username.trim().toLowerCase());
+}
+
 }

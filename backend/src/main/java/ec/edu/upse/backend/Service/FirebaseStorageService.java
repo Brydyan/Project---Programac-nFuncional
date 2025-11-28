@@ -21,29 +21,43 @@ public class FirebaseStorageService {
     private String credentialsPath;
     @Value("${firebase.bucket:}")
     private String bucketName;
+    @Value("${firebase.credentials.json:}")
+    private String credentialsJson;
     private Storage storage;
 
     private synchronized void init() throws IOException {
         if (this.storage != null)
             return;
         InputStream in;
-        // Prefer explicit property, fall back to env var FIREBASE_CREDENTIALS_PATH,
-        // then classpath
-        String effectivePath = credentialsPath;
-        if (effectivePath == null || effectivePath.isEmpty()) {
-            effectivePath = System.getenv("FIREBASE_CREDENTIALS_PATH");
+        // 1. Try explicit JSON content from property/env
+        String effectiveJson = credentialsJson;
+        if (effectiveJson == null || effectiveJson.isEmpty()) {
+            effectiveJson = System.getenv("FIREBASE_CREDENTIALS_JSON");
         }
-        if (effectivePath != null && !effectivePath.isEmpty()) {
-            try {
-                in = new java.io.FileInputStream(effectivePath);
-            } catch (IOException e) {
-                throw new IOException("Could not open Firebase credentials file at " + effectivePath, e);
-            }
+
+        if (effectiveJson != null && !effectiveJson.isEmpty()) {
+            in = new java.io.ByteArrayInputStream(effectiveJson.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         } else {
-            // Try to load from classpath
-            in = FirebaseStorageService.class.getResourceAsStream("/firebase-service-account.json");
-            if (in == null)
-                throw new IOException("No Firebase credentials provided (checked property, env var and classpath)");
+            // 2. Fallback to file path
+            // Prefer explicit property, fall back to env var FIREBASE_CREDENTIALS_PATH,
+            // then classpath
+            String effectivePath = credentialsPath;
+            if (effectivePath == null || effectivePath.isEmpty()) {
+                effectivePath = System.getenv("FIREBASE_CREDENTIALS_PATH");
+            }
+            if (effectivePath != null && !effectivePath.isEmpty()) {
+                try {
+                    in = new java.io.FileInputStream(effectivePath);
+                } catch (IOException e) {
+                    throw new IOException("Could not open Firebase credentials file at " + effectivePath, e);
+                }
+            } else {
+                // Try to load from classpath
+                in = FirebaseStorageService.class.getResourceAsStream("/firebase-service-account.json");
+                if (in == null)
+                    throw new IOException(
+                            "No Firebase credentials provided (checked property json, env var json, property path, env var path and classpath)");
+            }
         }
         GoogleCredentials creds = GoogleCredentials.fromStream(in);
         this.storage = StorageOptions.newBuilder().setCredentials(creds).build().getService();
