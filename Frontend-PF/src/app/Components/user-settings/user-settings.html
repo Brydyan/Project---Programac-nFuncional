@@ -22,10 +22,10 @@
           placeholder="Tu nombre de usuario"
         />
         <div style="margin-top:6px">
-          <span *ngIf="usernameChecking" style="color:#666">Comprobando disponibilidad...</span>
-          <span *ngIf="usernameAvailable === true" style="color:green">Nombre disponible</span>
-          <span *ngIf="usernameAvailable === false" style="color:red">Nombre ya está en uso</span>
-          <span *ngIf="usernameRequired" style="color:red; display:block; margin-top:6px">El nombre de usuario es obligatorio</span>
+          <span *ngIf="usernameTouched && usernameChecking" style="color:#666">Comprobando disponibilidad...</span>
+          <span *ngIf="usernameTouched && usernameAvailable === true" style="color:green">Nombre disponible</span>
+          <span *ngIf="usernameTouched && usernameAvailable === false" style="color:red">Nombre ya está en uso</span>
+          <span *ngIf="usernameTouched && usernameRequired" style="color:red; display:block; margin-top:6px">El nombre de usuario es obligatorio</span>
         </div>
       </div>
 

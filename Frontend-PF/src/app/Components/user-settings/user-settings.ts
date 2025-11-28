@@ -22,6 +22,8 @@ export class UserSettings implements OnInit {
   statusOptions = ['Online', 'Offline', 'Ausente', 'Ocupado'];
   selectedStatus = 'Online';
   profileImage: string | null = 'https://i.pravatar.cc/150?img=12';
+  usernameTouched = false;
+  private hasUserEditedUsername = false;
   // Archivo seleccionado para subir cuando se haga "Guardar Cambios"
   selectedPhotoFile: File | null = null;
   uploadingPhoto = false;
@@ -139,22 +141,13 @@ export class UserSettings implements OnInit {
       const cur = this.sessionService.currentSession;
       // If there's a cached session, populate username and profile image immediately
       if (cur) {
-        if (cur.username) this.username = cur.username;
-        else if (cur.displayName) this.username = cur.displayName;
-        this.profileImage = cur.photoUrl || cur.profileImage || this.profileImage;
-        // assume current username valid for the logged-in user
-        this.usernameAvailable = true;
+        this.applySessionData(cur);
       }
 
       // subscribe to session changes so the component updates when session is refreshed elsewhere
       this.sessionSub = this.sessionService.session$.subscribe((s: any) => {
         if (!s) return;
-        if (s.username) this.username = s.username;
-        else if (s.displayName) this.username = s.displayName;
-        this.profileImage = s.photoUrl || s.profileImage || this.profileImage;
-        this.usernameAvailable = true;
-        this.usernameRequired = false;
-        this.cdr.detectChanges();
+        this.applySessionData(s);
       });
 
       const token = localStorage.getItem('token');
@@ -162,6 +155,7 @@ export class UserSettings implements OnInit {
         // getByToken guarda la sesión en SessionService y la devuelve
         this.sessionService.getByToken(token).subscribe({
           next: (s: any) => {
+            this.applySessionData(s);
             const uid = s?.userId;
             if (uid) {
               // only request full user entity if we don't already have username or photoUrl
@@ -216,11 +210,14 @@ export class UserSettings implements OnInit {
         }
         // set real username from loaded user
         if (u?.username) {
-          this.username = u.username;
-          // assume current username valid for the user
-          this.usernameAvailable = true;
-          this.usernameRequired = false;
+          const canOverride = !this.hasUserEditedUsername || !this.username || this.username === 'UsuarioPureChat';
+          if (canOverride) {
+            this.username = u.username;
+            this.usernameAvailable = null;
+            this.usernameRequired = false;
+          }
         }
+        this.cdr.detectChanges();
       },
       error: (err: any) => {
         console.warn('[UserSettings] error loading user by id', err);
@@ -229,6 +226,8 @@ export class UserSettings implements OnInit {
   }
 
   onUsernameInput(value: string) {
+    this.usernameTouched = true;
+    this.hasUserEditedUsername = true;
     this.username = value || '';
     this.usernameAvailable = null;
     // mark required state
@@ -369,6 +368,8 @@ export class UserSettings implements OnInit {
   saveChanges() {
     if (!this.username.trim()) {
       // mark required and show error message instead of alert
+      this.usernameTouched = true;
+      this.hasUserEditedUsername = true;
       this.usernameRequired = true;
       this.uploadMessage = 'El nombre de usuario es obligatorio.';
       this.uploadMessageType = 'error';
@@ -516,6 +517,10 @@ export class UserSettings implements OnInit {
     this.username = 'UsuarioPureChat';
     this.selectedStatus = 'Online';
     this.profileImage = 'https://i.pravatar.cc/150?img=12';
+    this.usernameTouched = false;
+    this.hasUserEditedUsername = false;
+    this.usernameAvailable = null;
+    this.usernameRequired = false;
     
     this.notificationsSettings = {
       activate: true,
@@ -540,5 +545,22 @@ export class UserSettings implements OnInit {
     };
     
     alert('Valores restablecidos a los predeterminados.');
+  }
+
+  private applySessionData(session: any) {
+    if (!session) return;
+    const newUsername = session.username || session.displayName;
+    const canOverride = !this.hasUserEditedUsername || !this.username || this.username === 'UsuarioPureChat';
+    if (newUsername && canOverride) {
+      this.username = newUsername;
+      this.usernameRequired = false;
+      // keep availability neutral so messages don't appear until the user interact
+      this.usernameAvailable = null;
+    }
+    const newPhoto = session.photoUrl || session.profileImage;
+    if (newPhoto) {
+      this.profileImage = newPhoto;
+    }
+    this.cdr.detectChanges();
   }
 }
