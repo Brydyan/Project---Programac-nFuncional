@@ -81,4 +81,31 @@ public class FirebaseStorageService {
         result.put("photoPath", path);
         return result;
     }
+
+    /**
+     * Delete an object by its storage path (e.g. "users/{userId}/avatar_123.jpg").
+     * Returns true if the object was deleted or did not exist, false on error.
+     */
+    public boolean deleteByPath(String path) throws IOException {
+        if (path == null || path.trim().isEmpty()) return true;
+        if (this.storage == null) init();
+        try {
+            BlobId blobId = BlobId.of(bucketName, path);
+            // storage.delete returns true if deleted, false if not found
+            boolean deleted = storage.delete(blobId);
+            if (deleted) return true;
+            // if delete returned false, the object may not exist; check explicitly
+            try {
+                com.google.cloud.storage.Blob blob = storage.get(blobId);
+                if (blob == null || !blob.exists()) return true; // not found -> OK
+            } catch (Exception ex) {
+                // ignore
+            }
+            return false;
+        } catch (Exception e) {
+            // don't throw, let caller decide — log and return false
+            System.err.println("FirebaseStorageService.deleteByPath error for path=" + path + " -> " + e.getMessage());
+            return false;
+        }
+    }
 }

@@ -20,6 +20,18 @@ export class UserSettings implements OnInit {
   statusOptions = ['Online', 'Offline', 'Ausente', 'Ocupado'];
   selectedStatus = 'Online';
   profileImage: string | null = 'https://i.pravatar.cc/150?img=12';
+  // Archivo seleccionado para subir cuando se haga "Guardar Cambios"
+  selectedPhotoFile: File | null = null;
+  uploadingPhoto = false;
+  // Validación de la foto
+  readonly maxPhotoBytes = 1 * 1024 * 1024; // 1 MB
+  readonly allowedPhotoTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  photoValidationMessage: string | null = null;
+  photoValidationState: 'neutral' | 'ok' | 'error' = 'neutral';
+
+  // Mensajes generales para mostrar al usuario (success/error/info)
+  uploadMessage: string | null = null;
+  uploadMessageType: 'success' | 'error' | 'info' | null = null;
 
   // Notificaciones - Sección 1
   notificationsSettings = {
@@ -70,64 +82,41 @@ export class UserSettings implements OnInit {
     input.accept = 'image/*';
     input.onchange = (event: any) => {
       const file: File = event.target.files[0];
-      if (file) {
-        // mostrar preview inmediato
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-          this.profileImage = e.target.result;
-          this.cdr.detectChanges();
-        };
-        reader.readAsDataURL(file);
+      // limpiar mensajes previos
+      this.photoValidationMessage = null;
+      this.photoValidationState = 'neutral';
+      this.uploadMessage = null;
+      this.uploadMessageType = null;
 
-        // subir al backend
-        const session = this.sessionService.currentSession;
-        const userId = session?.userId;
-        if (!userId) {
-          alert('No se pudo determinar el usuario actual.');
+      if (file) {
+        // validar tipo
+        if (!this.allowedPhotoTypes.includes(file.type)) {
+          this.photoValidationMessage = 'Formato no soportado. Usa JPG, PNG, GIF o WEBP.';
+          this.photoValidationState = 'error';
+          this.selectedPhotoFile = null;
+          this.cdr.detectChanges();
           return;
         }
 
-        // mostrar indicador simple
-        const prev = (document.activeElement as HTMLElement);
+        // validar tamaño
+        if (file.size > this.maxPhotoBytes) {
+          this.photoValidationMessage = 'El archivo excede 1 MB. Selecciona un archivo más pequeño.';
+          this.photoValidationState = 'error';
+          this.selectedPhotoFile = null;
+          this.cdr.detectChanges();
+          return;
+        }
 
-        this.userService.uploadPhoto(userId, file).subscribe({
-          next: (res: any) => {
-            // debug: ver respuesta del backend
-            console.log('[UserSettings] upload response:', res);
-            // backend devuelve el usuario actualizado (photoUrl o photoPath)
-            const newUrl = res?.photoUrl || res?.avatarUrl || res?.photo?.url;
-            if (newUrl) {
-              this.profileImage = newUrl;
-            }
-
-            // Refrescar sesión para propagar la nueva foto en toda la app
-            const token = localStorage.getItem('token');
-            if (token) {
-              this.sessionService.getByToken(token).subscribe({
-                next: (s: any) => {
-                  console.log('[UserSettings] session refreshed:', s);
-                  // luego de refrescar la sesión, notificar a componentes que recarguen
-                  this.convEvents.notifyRefresh();
-                },
-                error: (e: any) => {
-                  console.warn('[UserSettings] session refresh failed', e);
-                  // aun si falla la recarga de sesión, intentar notificar para forzar recarga
-                  this.convEvents.notifyRefresh();
-                }
-              });
-            } else {
-              // si no hay token, igual notificar para forzar recarga
-              this.convEvents.notifyRefresh();
-            }
-
-            alert('Foto actualizada correctamente.');
-            this.cdr.detectChanges();
-          },
-          error: (err: any) => {
-            console.error('Error subiendo la foto', err);
-            alert('Error subiendo la foto. Intenta nuevamente.');
-          }
-        });
+        // Si pasa validaciones, previsualizar y marcar OK
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          this.profileImage = e.target.result;
+          this.photoValidationMessage = 'La imagen cumple el tamaño máximo (1 MB).';
+          this.photoValidationState = 'ok';
+          this.selectedPhotoFile = file;
+          this.cdr.detectChanges();
+        };
+        reader.readAsDataURL(file);
       }
     };
     input.click();
@@ -331,9 +320,68 @@ export class UserSettings implements OnInit {
 
     console.log('Guardando configuración:', settings);
     
-    if (confirm('¿Guardar cambios realizados?')) {
-      alert('Cambios guardados con éxito.');
+    if (!confirm('¿Guardar cambios realizados?')) {
+      return;
     }
+
+    // Si hay una foto seleccionada para subir, subirla primero y luego
+    // refrescar la sesión y notificar a otros componentes.
+    const session = this.sessionService.currentSession;
+    const userId = session?.userId;
+
+    const doNotifyAndMessage = (msg = 'Cambios guardados.', type: 'success' | 'error' | 'info' = 'success') => {
+      try { this.convEvents.notifyRefresh(); } catch (e) { /* ignore */ }
+      this.uploadMessage = msg;
+      this.uploadMessageType = type;
+      // auto-clear after a short time
+      setTimeout(() => { this.uploadMessage = null; this.uploadMessageType = null; this.cdr.detectChanges(); }, 6000);
+      this.cdr.detectChanges();
+    };
+
+    if (this.selectedPhotoFile) {
+      const uid = userId;
+      if (!uid) {
+        doNotifyAndMessage('No se pudo determinar el usuario actual para subir la foto.', 'error');
+        return;
+      }
+
+      this.uploadingPhoto = true;
+      this.userService.uploadPhoto(uid, this.selectedPhotoFile)
+        .pipe(take(1))
+        .subscribe({
+          next: (res: any) => {
+            console.log('[UserSettings] upload response (saveChanges):', res);
+            const newUrl = res?.photoUrl || res?.avatarUrl || res?.photo?.url;
+            if (newUrl) {
+              this.profileImage = newUrl;
+            }
+
+            // Refrescar sesión para propagar la nueva foto en toda la app
+            const token = localStorage.getItem('token');
+            if (token) {
+              this.sessionService.getByToken(token).pipe(take(1)).subscribe({
+                next: (s: any) => { doNotifyAndMessage('Cambios guardados. Foto subida.', 'success'); },
+                error: (e: any) => { console.warn('[UserSettings] session refresh failed', e); doNotifyAndMessage('Cambios guardados (error al refrescar sesión).', 'info'); }
+              });
+            } else {
+              doNotifyAndMessage('Cambios guardados. Foto subida.', 'success');
+            }
+
+            this.selectedPhotoFile = null;
+            this.uploadingPhoto = false;
+            this.cdr.detectChanges();
+          },
+          error: (err: any) => {
+            console.error('Error subiendo la foto', err);
+            this.uploadingPhoto = false;
+            doNotifyAndMessage('Error subiendo la foto. Intenta nuevamente.', 'error');
+          }
+        });
+      return;
+    }
+
+    // Si no hay foto nueva, simplemente notificar guardado de otros ajustes.
+    doNotifyAndMessage('Cambios guardados.', 'success');
   }
 
   resetDefaults() {

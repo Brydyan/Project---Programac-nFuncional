@@ -3,7 +3,10 @@ package ec.edu.upse.backend.Controller;
 import java.util.Arrays;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,17 +16,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import ec.edu.upse.backend.Entity.UserEntity;
+import ec.edu.upse.backend.Service.FirebaseStorageService;
 import ec.edu.upse.backend.Service.UserService;
 import ec.edu.upse.backend.dto.UserSummaryDto;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.http.MediaType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import ec.edu.upse.backend.Service.FirebaseStorageService;
 
 @RestController
 @RequestMapping("/app/v1/user")
@@ -81,10 +81,29 @@ public class UserController {
     @PostMapping(value = "/{id}/photo-upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserEntity> uploadPhoto(@PathVariable String id, @RequestPart("file") MultipartFile file) {
         try {
+            // read previous photoPath to attempt deletion later
+            String previousPath = null;
+            try {
+                previousPath = userService.getUserById(id).map(u -> u.getPhotoPath()).orElse(null);
+            } catch (Exception ex) {
+                logger.warn("Could not fetch previous user photoPath for userId={}", id);
+            }
+
             java.util.Map<String, String> res = firebaseStorageService.uploadUserAvatar(id, file);
             String photoUrl = res.get("photoUrl");
             String photoPath = res.get("photoPath");
             UserEntity updated = userService.updateUserPhoto(id, photoUrl, photoPath);
+
+            // attempt to delete previous file from storage (best-effort)
+            try {
+                if (previousPath != null && previousPath.trim().length() > 0 && !previousPath.equals(photoPath)) {
+                    boolean del = firebaseStorageService.deleteByPath(previousPath);
+                    if (!del) logger.warn("Could not delete previous photo at path={} for userId={}", previousPath, id);
+                }
+            } catch (Exception ex) {
+                logger.warn("Error deleting previous photo for userId={}: {}", id, ex.getMessage());
+            }
+
             return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
         } catch (Exception e) {
             logger.error("Error uploading user photo for userId={}", id, e);

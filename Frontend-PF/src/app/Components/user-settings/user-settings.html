@@ -43,6 +43,11 @@
             Cambiar Foto
           </button>
         </div>
+        <div class="photo-hint" style="margin-top:8px">
+          <span [ngStyle]="{ color: photoValidationState === 'error' ? 'red' : (photoValidationState === 'ok' ? 'green' : '#666') }">
+            {{ photoValidationMessage ? photoValidationMessage : 'Máx. 1MB. Formatos: JPG, PNG, GIF, WEBP.' }}
+          </span>
+        </div>
       </div>
     </section>
 
@@ -309,10 +314,15 @@
         </p>
       </div>
 
-      <button type="button" class="btn-save" (click)="saveChanges()">
-        <span class="btn-icon">💾</span>
-        Guardar Cambios
+      <button type="button" class="btn-save" (click)="saveChanges()" [disabled]="uploadingPhoto || photoValidationState === 'error'" [attr.aria-busy]="uploadingPhoto">
+        <span *ngIf="!uploadingPhoto" class="btn-icon">💾</span>
+        <span *ngIf="uploadingPhoto" class="btn-icon">⏳</span>
+        <span *ngIf="!uploadingPhoto"> Guardar Cambios</span>
+        <span *ngIf="uploadingPhoto"> Guardando...</span>
       </button>
+      <div *ngIf="uploadMessage" style="margin-top:10px">
+        <span [ngStyle]="{ color: uploadMessageType === 'error' ? 'red' : (uploadMessageType === 'success' ? 'green' : '#333') }">{{ uploadMessage }}</span>
+      </div>
     </div>
   </aside>
 </div>
