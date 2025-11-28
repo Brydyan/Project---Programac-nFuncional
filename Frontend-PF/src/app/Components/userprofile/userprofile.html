@@ -1,36 +1,61 @@
-<div class="profile-container">
+<div class="profile-container" *ngIf="!loading && user as u; else loadingTpl">
   <h1 class="profile-main-title">Perfil del Usuario</h1>
 
   <!-- INFORMACIÓN PERSONAL -->
   <section class="profile-section">
     <div class="section-header">
       <h2>Información Personal</h2>
-      <button class="edit-btn" (click)="onEditContact()">Editar Perfil</button>
+      <button class="edit-btn" (click)="toggleEditProfile()">
+        {{ editingProfile ? 'Cancelar' : 'Editar Perfil' }}
+      </button>
     </div>
 
     <div class="profile-card">
       <div class="profile-avatar-section">
         <div class="avatar-wrapper">
-          <img 
-            src="https://i.pravatar.cc/150?img=47" 
-            alt="Avatar de usuario"
-            class="profile-avatar"
-          />
+          <img [src]="avatarPreview || u.avatarUrl || u.photoUrl || 'https://i.pravatar.cc/150?u=' + u.id" alt="Avatar de usuario"
+            class="profile-avatar" />
+
           <span class="status-indicator active"></span>
+
+          <!-- input de archivo solo cuando estás editando -->
+          <label *ngIf="editingProfile" class="avatar-edit-label">
+            Cambiar foto
+            <input type="file" accept="image/*" (change)="onAvatarSelected($event)" hidden />
+          </label>
         </div>
 
         <div class="profile-info">
-          <h3 class="profile-name">{{ user.name }}</h3>
-          <span class="status-badge">
+          <h3 class="profile-name" *ngIf="!editingProfile; else editNameTpl">
+            {{ u.displayName || u.username }}
+          </h3>
+
+          <ng-template #editNameTpl>
+            <input type="text" [(ngModel)]="u.displayName" class="profile-name-input" placeholder="Nombre visible" />
+          </ng-template>
+
+          <span class="status-badge" *ngIf="!editingProfile; else editStatusTpl">
             <span class="status-icon">✓</span>
-            Activo
+            {{ u.statusMessage || 'Activo' }}
           </span>
+
+          <ng-template #editStatusTpl>
+            <input type="text" [(ngModel)]="u.statusMessage" class="status-input"
+              placeholder="Estado (Disponible, Ocupado, etc.)" />
+          </ng-template>
         </div>
       </div>
 
       <div class="bio-section">
         <h4 class="bio-label">Biografía</h4>
-        <p class="bio-text">{{ user.bio }}</p>
+
+        <p class="bio-text" *ngIf="!editingProfile; else editBioTpl">
+          {{ u.bio || 'Sin biografía todavía. Puedes añadir una aquí.' }}
+        </p>
+
+        <ng-template #editBioTpl>
+          <textarea [(ngModel)]="u.bio" rows="3" class="bio-textarea" placeholder="Escribe algo sobre ti..."></textarea>
+        </ng-template>
       </div>
     </div>
   </section>
@@ -39,7 +64,9 @@
   <section class="profile-section">
     <div class="section-header">
       <h2>Información de Contacto</h2>
-      <button class="edit-btn" (click)="onEditContact()">Editar Contacto</button>
+      <button class="edit-btn" (click)="toggleEditContact()">
+        {{ editingContact ? 'Cancelar' : 'Editar Contacto' }}
+      </button>
     </div>
 
     <div class="profile-card">
@@ -47,7 +74,14 @@
         <span class="contact-icon">📧</span>
         <div class="contact-details">
           <p class="contact-label">Correo Electrónico</p>
-          <p class="contact-value">{{ user.email }}</p>
+
+          <p class="contact-value" *ngIf="!editingContact; else editEmailTpl">
+            {{ u.email }}
+          </p>
+
+          <ng-template #editEmailTpl>
+            <input type="email" [(ngModel)]="u.email" class="contact-input" placeholder="correo@ejemplo.com" />
+          </ng-template>
         </div>
       </div>
 
@@ -55,41 +89,45 @@
         <span class="contact-icon">📱</span>
         <div class="contact-details">
           <p class="contact-label">Teléfono</p>
-          <p class="contact-value">{{ user.phone }}</p>
+          <!-- aún no existe phone en el modelo, mostramos placeholder -->
+          <p class="contact-value">No registrado</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- PREFERENCIAS -->
+  <!-- PREFERENCIAS (solo info, editable desde Configuración) -->
   <section class="profile-section">
     <div class="section-header">
       <h2>Preferencias</h2>
-      <button class="edit-btn" (click)="onEditPreferences()">Editar Preferencias</button>
+      <button class="edit-btn" (click)="onEditPreferences()">
+        Abrir Configuración
+      </button>
     </div>
 
     <div class="profile-card">
-      <div class="preference-item">
-        <span class="preference-icon">🔔</span>
-        <div class="preference-details">
-          <p class="preference-label">Notificaciones</p>
-          <p class="preference-value">{{ user.notifications ? 'Activadas' : 'Desactivadas' }}</p>
-        </div>
-      </div>
-
-      <div class="preference-item">
-        <span class="preference-icon">🎨</span>
-        <div class="preference-details">
-          <p class="preference-label">Tema de la Aplicación</p>
-          <p class="preference-value">{{ user.theme }}</p>
-        </div>
-      </div>
+      <p class="preferences-note">
+        Las preferencias de notificaciones, tema e idioma se editan desde la
+        pantalla de Configuración.
+      </p>
     </div>
   </section>
 
   <!-- BOTONES DE ACCIÓN -->
-  <div class="action-buttons">
-    <button class="btn-cancel" (click)="onCancel()">Cancelar</button>
-    <button class="btn-primary" (click)="onBackToChat()">Volver a Chat</button>
+  <div class="action-buttons" *ngIf="editingProfile || editingContact">
+    <button class="btn-cancel" type="button" (click)="cancelEdits()">Cancelar</button>
+    <button class="btn-primary" type="button" (click)="saveProfile()">Guardar cambios</button>
+  </div>
+
+  <div class="action-buttons" *ngIf="!editingProfile && !editingContact">
+    <button class="btn-primary" type="button" (click)="onBackToChat()">Volver a Chat</button>
   </div>
 </div>
+
+<ng-template #loadingTpl>
+  <div class="profile-container">
+    <h1 class="profile-main-title">Perfil del Usuario</h1>
+    <p *ngIf="loading">Cargando perfil...</p>
+    <p *ngIf="!loading && error" class="error-text">{{ error }}</p>
+  </div>
+</ng-template>

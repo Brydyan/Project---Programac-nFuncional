@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { UserProfile } from '../Model/user-profile-model';
 
 export interface UserSearchResult {
   id: string;
@@ -21,6 +22,10 @@ export class UserService {
 
 
   constructor(private http: HttpClient) {}
+
+  getProfile(userId: string): Observable<UserProfile> {
+    return this.http.get<UserProfile>(`${this.baseUrl}/${userId}`);
+  }
 
   searchUsers(term: string, excludeId?: string): Observable<UserSearchResult[]> {
     let params = new HttpParams().set('q', term);
@@ -51,8 +56,8 @@ export class UserService {
   }
 
   // Partial profile update (username, displayName, status, preferences, photoUrl/photoPath)
-  updateProfile(userId: string, payload: any) {
-    return this.http.patch<any>(`${this.baseUrl}/${userId}/profile`, payload);
+  updateProfile(userId: string, payload: Partial<UserProfile> & Record<string, any>) {
+    return this.http.patch<UserProfile>(`${this.baseUrl}/${userId}/profile`, payload);
   }
 
 }

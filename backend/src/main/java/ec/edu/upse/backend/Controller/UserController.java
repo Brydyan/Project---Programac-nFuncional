@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,6 +25,8 @@ import org.springframework.web.multipart.MultipartFile;
 import ec.edu.upse.backend.Entity.UserEntity;
 import ec.edu.upse.backend.Service.FirebaseStorageService;
 import ec.edu.upse.backend.Service.UserService;
+import ec.edu.upse.backend.dto.UserProfileDto;
+import ec.edu.upse.backend.dto.UserSettingsDto;
 import ec.edu.upse.backend.dto.UserSummaryDto;
 
 @RestController
@@ -148,5 +151,109 @@ public class UserController {
         List<String> ids = Arrays.asList(idsCsv.split(","));
         List<UserSummaryDto> users = userService.getUsersByIds(ids);
         return ResponseEntity.ok(users);
+    }
+
+    // ========= PERFIL =========
+    @GetMapping("/profile/me")
+    public ResponseEntity<UserProfileDto> getMyProfile(Authentication auth) {
+        String authUserId = auth.getName(); // aquí asumes que el subject del JWT es el ID del user
+        return userService.getUserById(authUserId)
+                .map(this::toProfileDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/profile/me")
+    public ResponseEntity<UserProfileDto> updateMyProfile(
+            @RequestBody UserProfileDto dto,
+            Authentication auth) {
+        String authUserId = auth.getName();
+
+        return userService.getUserById(authUserId)
+                .map(user -> {
+                    if (dto.getDisplayName() != null)
+                        user.setDisplayName(dto.getDisplayName());
+                    if (dto.getBio() != null)
+                        user.setBio(dto.getBio());
+                    if (dto.getStatusMessage() != null)
+                        user.setStatusMessage(dto.getStatusMessage());
+                    if (dto.getAvatarUrl() != null) {
+                        user.setAvatarUrl(dto.getAvatarUrl());
+                        user.setPhotoUrl(dto.getAvatarUrl());
+                    }
+
+                    UserEntity saved = userService.save(user);
+                    return ResponseEntity.ok(toProfileDto(saved));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ========= SETTINGS =========
+
+    @GetMapping("/settings/me")
+    public ResponseEntity<UserSettingsDto> getMySettings(Authentication auth) {
+        String authUserId = auth.getName();
+        return userService.getUserById(authUserId)
+                .map(this::toSettingsDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/settings/me")
+    public ResponseEntity<UserSettingsDto> updateMySettings(
+            @RequestBody UserSettingsDto dto,
+            Authentication auth) {
+        String authUserId = auth.getName();
+
+        return userService.getUserById(authUserId)
+                .map(user -> {
+                    if (dto.getNotificationsActivate() != null)
+                        user.setNotificationsActivate(dto.getNotificationsActivate());
+                    if (dto.getNotificationsSound() != null)
+                        user.setNotificationsSound(dto.getNotificationsSound());
+                    if (dto.getNotificationsDesktop() != null)
+                        user.setNotificationsDesktop(dto.getNotificationsDesktop());
+
+                    if (dto.getDarkMode() != null)
+                        user.setDarkMode(dto.getDarkMode());
+                    if (dto.getFontSize() != null)
+                        user.setFontSize(dto.getFontSize());
+
+                    if (dto.getInterfaceLanguage() != null)
+                        user.setInterfaceLanguage(dto.getInterfaceLanguage());
+                    if (dto.getTimezone() != null)
+                        user.setTimezone(dto.getTimezone());
+
+                    UserEntity saved = userService.save(user);
+                    return ResponseEntity.ok(toSettingsDto(saved));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ========= MAPPERS PRIVADOS =========
+
+    private UserProfileDto toProfileDto(UserEntity user) {
+        UserProfileDto dto = new UserProfileDto();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setDisplayName(user.getDisplayName());
+        dto.setEmail(user.getEmail());
+        dto.setBio(user.getBio());
+        dto.setStatusMessage(user.getStatusMessage());
+        dto.setAvatarUrl(user.getAvatarUrl() != null ? user.getAvatarUrl() : user.getPhotoUrl());
+        return dto;
+    }
+
+    private UserSettingsDto toSettingsDto(UserEntity user) {
+        UserSettingsDto dto = new UserSettingsDto();
+        dto.setId(user.getId());
+        dto.setNotificationsActivate(user.getNotificationsActivate());
+        dto.setNotificationsSound(user.getNotificationsSound());
+        dto.setNotificationsDesktop(user.getNotificationsDesktop());
+        dto.setDarkMode(user.getDarkMode());
+        dto.setFontSize(user.getFontSize());
+        dto.setInterfaceLanguage(user.getInterfaceLanguage());
+        dto.setTimezone(user.getTimezone());
+        return dto;
     }
 }

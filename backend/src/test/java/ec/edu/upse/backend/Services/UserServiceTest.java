@@ -8,7 +8,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -23,7 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import ec.edu.upse.backend.Entity.UserEntity;
 import ec.edu.upse.backend.Repository.UserRepository;
@@ -34,6 +33,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private PasswordEncoder encoder;
 
     @InjectMocks
     private UserService userService;
@@ -49,6 +51,7 @@ class UserServiceTest {
 
         // después de normalizar debería quedar en minúsculas
         when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(encoder.encode(anyString())).thenReturn("hashed_password");
 
         UserEntity result = userService.save(user);
 
@@ -67,16 +70,15 @@ class UserServiceTest {
         user.setPassword("Abcde1!@");
 
         when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(encoder.encode(anyString())).thenReturn("hashed_secret");
 
         UserEntity result = userService.save(user);
 
         assertNotNull(result.getPassword());
-        assertNotEquals("Abcde1!@", result.getPassword());
-
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        assertTrue(encoder.matches("Abcde1!@", result.getPassword()));
+        assertEquals("hashed_secret", result.getPassword());
 
         verify(userRepository).save(any(UserEntity.class));
+        verify(encoder).encode("Abcde1!@");
     }
 
     @Test

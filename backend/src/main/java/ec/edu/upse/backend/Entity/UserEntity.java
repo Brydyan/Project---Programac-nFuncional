@@ -30,6 +30,9 @@ public class UserEntity {
     private String status; // ONLINE, OFFLINE, AWAY
     // Subdocumento embebido
     private Map<String, Object> preferences; // Ejemplo: { "theme": "dark", "notifications": true }
+    private String bio;
+    private String statusMessage;
+    private String avatarUrl;
     
     // Campos adicionales para mapeo con frontend
     private String alias; // Sinónimo de username
@@ -42,6 +45,15 @@ public class UserEntity {
     private String photoUrl;
     // Opcional: path o id en Firebase Storage (ej: "users/{userId}/avatar.jpg")
     private String photoPath;
+
+    // Configuración de notificaciones y preferencias de UI
+    private Boolean notificationsActivate;
+    private Boolean notificationsSound;
+    private Boolean notificationsDesktop;
+    private Boolean darkMode;
+    private Integer fontSize;
+    private String interfaceLanguage;
+    private String timezone;
     
     // Método auxiliar para asignar username desde alias si es necesario
     public void processAliasAndNombre() {
