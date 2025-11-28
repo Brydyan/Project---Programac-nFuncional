@@ -11,6 +11,12 @@ export interface ChatMessage {
   timestamp: string;
   edited: boolean;
   deleted: boolean;
+  // optional attachment metadata
+  attachmentUrl?: string;
+  attachmentPath?: string;
+  attachmentName?: string;
+  attachmentMime?: string;
+  attachmentSize?: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -26,12 +32,23 @@ export class MessageService {
     );
   }
 
-  sendDirect(senderId: string, receiverId: string, content: string): Observable<ChatMessage> {
-    return this.http.post<ChatMessage>(`${this.baseUrl}/direct`, {
-      senderId,
-      receiverId,
-      content
-    });
+  sendDirect(senderId: string, receiverId: string, content: string, attachment?: {url?: string, path?: string, name?: string, contentType?: string, size?: number}): Observable<ChatMessage> {
+    const payload: any = { senderId, receiverId, content };
+    if (attachment) {
+      payload.attachmentUrl = attachment.url;
+      payload.attachmentPath = attachment.path;
+      payload.attachmentName = attachment.name;
+      payload.attachmentMime = attachment.contentType;
+      payload.attachmentSize = attachment.size;
+    }
+    return this.http.post<ChatMessage>(`${this.baseUrl}/direct`, payload);
+  }
+
+  uploadAttachment(file: File, folder?: string) {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    if (folder) fd.append('folder', folder);
+    return this.http.post<any>(`${this.baseUrl}/attachments`, fd);
   }
 
   // Obtener la cantidad de mensajes no leídos en una conversación (por usuario)

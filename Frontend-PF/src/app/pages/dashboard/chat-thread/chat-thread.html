@@ -60,7 +60,17 @@
           'message-bubble--left': !isMine(msg)
         }"
       >
-        <p>{{ msg.content }}</p>
+        <div *ngIf="msg.content">
+          <p>{{ msg.content }}</p>
+        </div>
+
+        <div *ngIf="msg.attachmentUrl" class="message-attachment">
+          <img *ngIf="msg.attachmentMime?.startsWith('image/')" [src]="msg.attachmentUrl" class="attachment-thumb" (click)="openAttachment(msg.attachmentUrl)" />
+          <div *ngIf="!(msg.attachmentMime?.startsWith('image/'))">
+            <a [href]="msg.attachmentUrl" target="_blank" rel="noopener">{{ msg.attachmentName || 'Archivo' }}</a>
+          </div>
+        </div>
+
         <span class="message-time">
           {{ msg.timestamp | date:'shortTime' }}
         </span>
@@ -72,7 +82,10 @@
   <!-- INPUT DE MENSAJE -->
   <footer class="chat-input-area">
     <div class="input-wrapper">
-      <button class="attach-btn" type="button">📎</button>
+      <button class="attach-btn" type="button" (click)="onSelectImageClick()">🖼️</button>
+      <button class="attach-btn" type="button" (click)="onSelectFileClick()">📎</button>
+      <input id="file-input-image" type="file" accept="image/*" style="display:none" (change)="onFileSelected($event, true)" />
+      <input id="file-input-file" type="file" style="display:none" (change)="onFileSelected($event, false)" />
       <input
         type="text"
         placeholder="Escribe tu mensaje aquí..."
@@ -82,9 +95,11 @@
       <button
         class="send-btn"
         type="button"
-        (click)="sendMessage()"          
+        (click)="sendMessage()"
+        [disabled]="attaching"
       >
-        ➤
+        <span *ngIf="!attaching">➤</span>
+        <span *ngIf="attaching" class="spinner" aria-hidden="true"></span>
       </button>
     </div>
   </footer>

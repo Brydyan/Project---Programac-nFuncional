@@ -26,4 +26,10 @@ public class MessageEntity {
     }
 
     private MessageStatus status = MessageStatus.SENT;
+    // Attachment metadata (optional)
+    private String attachmentUrl;
+    private String attachmentPath;
+    private String attachmentName;
+    private String attachmentMime;
+    private Long attachmentSize;
 }

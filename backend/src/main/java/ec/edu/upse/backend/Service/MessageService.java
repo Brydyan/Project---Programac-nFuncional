@@ -100,8 +100,10 @@ public class MessageService {
     }
 
    //  enviar mensaje 1 a 1
-public MessageEntity sendDirect(String senderId, String receiverId, String content) {
-    if (!MessageValidator.esContenidoValido(content)) {
+public MessageEntity sendDirect(String senderId, String receiverId, String content,
+                                String attachmentUrl, String attachmentPath, String attachmentName,
+                                String attachmentMime, Long attachmentSize) {
+    if (!MessageValidator.esContenidoValido(content) && (attachmentUrl == null || attachmentUrl.isEmpty())) {
         throw new IllegalArgumentException("El contenido del mensaje no es válido");
     }
 
@@ -117,6 +119,24 @@ public MessageEntity sendDirect(String senderId, String receiverId, String conte
     message.setDeleted(false);
     message.setTimestamp(java.time.Instant.now());
 
+    // Attachments (optional)
+    if (attachmentUrl != null && !attachmentUrl.isEmpty()) {
+        message.setAttachmentUrl(attachmentUrl);
+    }
+    if (attachmentPath != null && !attachmentPath.isEmpty()) {
+        message.setAttachmentPath(attachmentPath);
+    }
+    if (attachmentName != null && !attachmentName.isEmpty()) {
+        message.setAttachmentName(attachmentName);
+    }
+    if (attachmentMime != null && !attachmentMime.isEmpty()) {
+        message.setAttachmentMime(attachmentMime);
+    }
+    if (attachmentSize != null) {
+        message.setAttachmentSize(attachmentSize);
+    }
+    // Note: size may be null
+    
     MessageEntity saved = messageRepository.save(message);
 
     // 1) ID de la conversación (mismo criterio que en el front)

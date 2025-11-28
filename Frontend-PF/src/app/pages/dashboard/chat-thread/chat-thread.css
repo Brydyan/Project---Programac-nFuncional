@@ -249,3 +249,18 @@
 .empty-subtitle {
   font-size: 13px;
 }
+
+.message-attachment {
+  margin-top: 6px;
+}
+.attachment-thumb {
+  max-width: 260px;
+  max-height: 200px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: block;
+}
+.message-attachment a {
+  color: #cbd5e1;
+  text-decoration: underline;
+}

@@ -83,6 +83,40 @@ public class FirebaseStorageService {
     }
 
     /**
+     * Upload a generic file to a folder (e.g. "attachments" or "users/{id}/files").
+     * Returns a map with keys: url, path, name, contentType
+     */
+    public Map<String, String> uploadFile(String folder, MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("file empty");
+        if (this.storage == null) init();
+        if (bucketName == null || bucketName.isEmpty()) throw new IllegalStateException("firebase.bucket not configured");
+
+        String original = file.getOriginalFilename();
+        String ext = "";
+        if (original != null && original.contains(".")) {
+            ext = original.substring(original.lastIndexOf('.'));
+        }
+
+        String safeFolder = folder != null ? folder.replaceAll("^/|/$", "") : "attachments";
+        String path = String.format("%s/%d_%s", safeFolder, Instant.now().toEpochMilli(), (original != null ? original.replaceAll("[^a-zA-Z0-9._-]","_") : "file"));
+        BlobId blobId = BlobId.of(bucketName, path);
+        BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(file.getContentType()).build();
+
+        try (InputStream is = file.getInputStream()) {
+            storage.create(blobInfo, is);
+            storage.createAcl(blobId, Acl.of(Acl.User.ofAllUsers(), Acl.Role.READER));
+        }
+
+        String publicUrl = String.format("https://storage.googleapis.com/%s/%s", bucketName, path);
+        Map<String, String> result = new HashMap<>();
+        result.put("url", publicUrl);
+        result.put("path", path);
+        result.put("name", original != null ? original : "file");
+        result.put("contentType", file.getContentType());
+        return result;
+    }
+
+    /**
      * Delete an object by its storage path (e.g. "users/{userId}/avatar_123.jpg").
      * Returns true if the object was deleted or did not exist, false on error.
      */

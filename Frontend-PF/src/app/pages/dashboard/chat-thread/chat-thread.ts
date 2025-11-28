@@ -36,6 +36,7 @@ export class ChatThread implements OnInit, OnDestroy {
   messages: ChatMessage[] = [];
   newMessage = '';
   loading = true;
+  attaching = false;
   // Presencia del contacto
   contactPresence: string | null = null; // 'ONLINE' | 'INACTIVE' | 'OFFLINE' | null
   get contactStatusLabel(): string {
@@ -431,6 +432,82 @@ export class ChatThread implements OnInit, OnDestroy {
           console.error('Error enviando mensaje', err);
         },
       });
+  }
+
+  onSelectImageClick(): void {
+    const el = document.getElementById('file-input-image') as HTMLInputElement | null;
+    if (el) el.click();
+  }
+
+  onSelectFileClick(): void {
+    const el = document.getElementById('file-input-file') as HTMLInputElement | null;
+    if (el) el.click();
+  }
+
+  onFileSelected(ev: Event, isImage: boolean): void {
+    const input = ev.target as HTMLInputElement;
+    if (!input || !input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    // reset the input so same file can be selected again later
+    setTimeout(() => { input.value = ''; }, 200);
+
+    const IMAGE_LIMIT = 10 * 1024 * 1024; // 10MB
+    const OTHER_LIMIT = 50 * 1024 * 1024; // 50MB
+
+    if (isImage) {
+      if (file.size > IMAGE_LIMIT) {
+        alert('Imagen demasiado grande (máx 10MB)');
+        return;
+      }
+    } else {
+      if (file.size > OTHER_LIMIT) {
+        alert('Archivo demasiado grande (máx 50MB)');
+        return;
+      }
+    }
+
+    // Upload and send message with attachment metadata
+    this.attaching = true;
+    this.cdr.detectChanges();
+
+    this.messageService.uploadAttachment(file, `attachments/${this.currentUserId}`).subscribe({
+      next: (resp) => {
+        const attachment = {
+          url: resp.url,
+          path: resp.path,
+          name: resp.name,
+          contentType: resp.contentType,
+          size: resp.size
+        };
+
+        // send message with empty content but with attachment
+        this.messageService.sendDirect(this.currentUserId, this.contactId, '', attachment).subscribe({
+          next: (msg) => {
+            this.messages = [...this.messages, msg];
+            this.scrollToBottom();
+            this.cdr.detectChanges();
+            this.convEvents.notifyRefresh();
+            this.attaching = false;
+          },
+          error: (err) => {
+            console.error('Error sending message with attachment', err);
+            this.attaching = false;
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Upload failed', err);
+        alert('Error subiendo archivo: ' + (err?.error || err?.message || '')); 
+        this.attaching = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  openAttachment(url: string): void {
+    if (!url) return;
+    window.open(url, '_blank');
   }
 
   // =======================
