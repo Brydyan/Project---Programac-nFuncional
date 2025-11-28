@@ -24,7 +24,7 @@ export class UserSettings implements OnInit {
   selectedPhotoFile: File | null = null;
   uploadingPhoto = false;
   // Validación de la foto
-  readonly maxPhotoBytes = 1 * 1024 * 1024; // 1 MB
+  readonly maxPhotoBytes = 10 * 1024 * 1024; // 10 MB
   readonly allowedPhotoTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   photoValidationMessage: string | null = null;
   photoValidationState: 'neutral' | 'ok' | 'error' = 'neutral';
@@ -100,7 +100,7 @@ export class UserSettings implements OnInit {
 
         // validar tamaño
         if (file.size > this.maxPhotoBytes) {
-          this.photoValidationMessage = 'El archivo excede 1 MB. Selecciona un archivo más pequeño.';
+          this.photoValidationMessage = 'El archivo excede 10 MB. Selecciona un archivo más pequeño.';
           this.photoValidationState = 'error';
           this.selectedPhotoFile = null;
           this.cdr.detectChanges();
@@ -111,7 +111,7 @@ export class UserSettings implements OnInit {
         const reader = new FileReader();
         reader.onload = (e: any) => {
           this.profileImage = e.target.result;
-          this.photoValidationMessage = 'La imagen cumple el tamaño máximo (1 MB).';
+          this.photoValidationMessage = 'La imagen cumple el tamaño máximo (10 MB).';
           this.photoValidationState = 'ok';
           this.selectedPhotoFile = file;
           this.cdr.detectChanges();
