@@ -264,3 +264,51 @@
   color: #cbd5e1;
   text-decoration: underline;
 }
+
+/* Simple spinner used when uploading attachments */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* visually indicate the send button disabled state */
+.send-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-progress {
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.progress-bar {
+  width: 220px;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #4f46e5);
+  width: 0%;
+  transition: width 0.2s linear;
+}
+.progress-label {
+  font-size: 12px;
+  color: #cbd5e1;
+  min-width: 36px;
+  text-align: right;
+}

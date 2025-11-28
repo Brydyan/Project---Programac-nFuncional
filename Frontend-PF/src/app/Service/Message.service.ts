@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface ChatMessage {
@@ -44,11 +44,14 @@ export class MessageService {
     return this.http.post<ChatMessage>(`${this.baseUrl}/direct`, payload);
   }
 
-  uploadAttachment(file: File, folder?: string) {
+  uploadAttachment(file: File, folder?: string): Observable<HttpEvent<any>> {
     const fd = new FormData();
     fd.append('file', file, file.name);
     if (folder) fd.append('folder', folder);
-    return this.http.post<any>(`${this.baseUrl}/attachments`, fd);
+    return this.http.post<any>(`${this.baseUrl}/attachments`, fd, {
+      reportProgress: true,
+      observe: 'events'
+    });
   }
 
   // Obtener la cantidad de mensajes no leídos en una conversación (por usuario)

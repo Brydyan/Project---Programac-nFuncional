@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ChangeDetectorRef } from '@angular/core';
 
 import { SessionService } from '../../../Service/session.service';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEventType } from '@angular/common/http';
 import { ChatMessage, MessageService } from '../../../Service/Message.service';
 import { UserService } from '../../../Service/user.service';
 import { RealtimeService } from '../../../Service/realtime.service';
@@ -37,6 +37,7 @@ export class ChatThread implements OnInit, OnDestroy {
   newMessage = '';
   loading = true;
   attaching = false;
+  uploadProgress: number | null = null;
   // Presencia del contacto
   contactPresence: string | null = null; // 'ONLINE' | 'INACTIVE' | 'OFFLINE' | null
   get contactStatusLabel(): string {
@@ -470,36 +471,51 @@ export class ChatThread implements OnInit, OnDestroy {
     this.attaching = true;
     this.cdr.detectChanges();
 
+    this.uploadProgress = 0;
     this.messageService.uploadAttachment(file, `attachments/${this.currentUserId}`).subscribe({
-      next: (resp) => {
-        const attachment = {
-          url: resp.url,
-          path: resp.path,
-          name: resp.name,
-          contentType: resp.contentType,
-          size: resp.size
-        };
+      next: (event: any) => {
+        if (event.type === HttpEventType.UploadProgress) {
+          const loaded = event.loaded;
+          const total = event.total || file.size;
+          this.uploadProgress = Math.round((loaded / total) * 100);
+          this.cdr.detectChanges();
+          return;
+        }
 
-        // send message with empty content but with attachment
-        this.messageService.sendDirect(this.currentUserId, this.contactId, '', attachment).subscribe({
-          next: (msg) => {
-            this.messages = [...this.messages, msg];
-            this.scrollToBottom();
-            this.cdr.detectChanges();
-            this.convEvents.notifyRefresh();
-            this.attaching = false;
-          },
-          error: (err) => {
-            console.error('Error sending message with attachment', err);
-            this.attaching = false;
-            this.cdr.detectChanges();
-          }
-        });
+        if (event.type === HttpEventType.Response) {
+          const resp = event.body;
+          const attachment = {
+            url: resp.url,
+            path: resp.path,
+            name: resp.name,
+            contentType: resp.contentType,
+            size: resp.size
+          };
+
+          // send message with empty content but with attachment
+          this.messageService.sendDirect(this.currentUserId, this.contactId, '', attachment).subscribe({
+            next: (msg) => {
+              this.messages = [...this.messages, msg];
+              this.scrollToBottom();
+              this.cdr.detectChanges();
+              this.convEvents.notifyRefresh();
+              this.attaching = false;
+              this.uploadProgress = null;
+            },
+            error: (err) => {
+              console.error('Error sending message with attachment', err);
+              this.attaching = false;
+              this.uploadProgress = null;
+              this.cdr.detectChanges();
+            }
+          });
+        }
       },
       error: (err) => {
         console.error('Upload failed', err);
-        alert('Error subiendo archivo: ' + (err?.error || err?.message || '')); 
+        alert('Error subiendo archivo: ' + (err?.error || err?.message || ''));
         this.attaching = false;
+        this.uploadProgress = null;
         this.cdr.detectChanges();
       }
     });

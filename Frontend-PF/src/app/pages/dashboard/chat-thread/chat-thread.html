@@ -17,6 +17,12 @@
         <div class="contact-status" [ngClass]="{ 'online': contactPresence === 'ONLINE', 'inactive': contactPresence === 'INACTIVE', 'offline': contactPresence === 'OFFLINE' }">{{ contactStatusLabel }}</div>
       </div>
     </div>
+    <div *ngIf="attaching && uploadProgress !== null" class="upload-progress">
+      <div class="progress-bar">
+        <div class="progress" [style.width.%]="uploadProgress"></div>
+      </div>
+      <div class="progress-label">{{ uploadProgress }}%</div>
+    </div>
 
     <div class="chat-header-right">
       <button class="icon-btn" type="button">📞</button>
