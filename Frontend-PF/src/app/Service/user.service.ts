@@ -8,6 +8,7 @@ export interface UserSearchResult {
   displayName: string;
   email: string;
   avatarUrl?: string;
+  photoUrl?: string;
 }
 
 @Injectable({

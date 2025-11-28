@@ -14,7 +14,7 @@
   <div class="channel-body">
 
     <!-- CHAT -->
-    <main class="chat-area" #scrollMe>
+    <main class="chat-area" id="channel-thread-messages" #scrollMe>
       <div *ngIf="messages.length === 0" class="empty-state">
         <h3>No hay mensajes aún</h3>
         <p>Comienza la conversación enviando un mensaje.</p>
@@ -35,7 +35,9 @@
       <h3>Miembros en línea ({{ onlineMembers.length }})</h3>
 
       <div *ngFor="let m of membersInfo" class="member-item">
-        <div class="avatar"></div>
+        <div class="avatar">
+          <img [src]="m.avatarUrl || 'https://i.pravatar.cc/50?u=' + m.userId" [alt]="m.username" />
+        </div>
         <span class="member-name">{{ m.username }}</span>
         <span class="online-dot" [class.online]="m.online"></span>
       </div>

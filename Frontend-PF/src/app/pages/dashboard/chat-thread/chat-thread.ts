@@ -5,12 +5,14 @@ import { ActivatedRoute } from '@angular/router';
 import { ChangeDetectorRef } from '@angular/core';
 
 import { SessionService } from '../../../Service/session.service';
-import { HttpClient, HttpEventType } from '@angular/common/http';
+import { HttpEventType } from '@angular/common/http';
 import { ChatMessage, MessageService } from '../../../Service/Message.service';
-import { UserService } from '../../../Service/user.service';
+import { UserSearchResult, UserService } from '../../../Service/user.service';
 import { RealtimeService } from '../../../Service/realtime.service';
 import { Subscription } from 'rxjs';
 import { ConversationEventsService } from '../../../Service/conversation-events.service';
+import { UserProfileEventsService } from '../../../Service/user-profile-events.service';
+import { PresenceService } from '../../../Service/presence.service';
 @Component({
   selector: 'app-chat-thread',
   standalone: true,
@@ -25,7 +27,8 @@ export class ChatThread implements OnInit, OnDestroy {
   private messageService = inject(MessageService);
   private userService = inject(UserService);
   private realtimeService = inject(RealtimeService);
-  private http = inject(HttpClient);
+  private presenceService = inject(PresenceService);
+  private profileEvents = inject(UserProfileEventsService);
   private cdr = inject(ChangeDetectorRef);
 
   contactId!: string;
@@ -33,6 +36,9 @@ export class ChatThread implements OnInit, OnDestroy {
 
   contactDisplayName: string | null = null;
   contactAvatarUrl: string | null = null;
+  profilePreview: UserSearchResult | null = null;
+  showProfilePreview = false;
+  previewLoading = false;
   messages: ChatMessage[] = [];
   newMessage = '';
   loading = true;
@@ -51,6 +57,7 @@ export class ChatThread implements OnInit, OnDestroy {
   private routeSub?: Subscription;
   private realtimeSub?: Subscription;
   private eventsSub?: Subscription;
+  private profileEventsSub?: Subscription;
   private presenceIntervalId: any = null;
   // Presencia
   private activityTimestamp = 0;
@@ -76,6 +83,10 @@ export class ChatThread implements OnInit, OnDestroy {
       this.eventsSub = this.convEvents.refresh$.subscribe(() => {
         this.loadContact();
       });
+      // Suscribirse a eventos globales de update de perfil para refrescar avatar si aplica
+      this.profileEventsSub = this.profileEvents.profileUpdate$.subscribe((userId) => {
+        if (userId === this.contactId) this.loadContact();
+      });
       this.initChat();
       // Registrar handlers globales de presencia (se añaden cuando el componente se crea)
       document.addEventListener('click', this.activityListener);
@@ -90,6 +101,7 @@ export class ChatThread implements OnInit, OnDestroy {
     this.routeSub?.unsubscribe();
     this.realtimeSub?.unsubscribe();
     this.eventsSub?.unsubscribe();
+    this.profileEventsSub?.unsubscribe();
     this.stopPresencePolling();
     document.removeEventListener('click', this.activityListener);
     document.removeEventListener('keydown', this.activityListener);
@@ -108,10 +120,8 @@ export class ChatThread implements OnInit, OnDestroy {
     this.userService.getUserById(this.contactId).subscribe({
       next: (user) => {
         this.contactDisplayName = user.displayName || '@' + user.username;
-        // usar `any` para campos opcionales que no están tipados en UserSearchResult
         const uAny: any = user as any;
-        const avatar = uAny?.photoUrl || uAny?.avatarUrl || uAny?.photo?.url || uAny?.profileImage || null;
-        this.contactAvatarUrl = avatar;
+        this.contactAvatarUrl = user.photoUrl || user.avatarUrl || uAny?.photo?.url || uAny?.profileImage || null;
         this.cdr.detectChanges();
       },
       error: () => {
@@ -221,47 +231,44 @@ export class ChatThread implements OnInit, OnDestroy {
 
   private fetchContactPresence(): void {
     if (!this.contactId) return;
-    // endpoint devuelve texto: ONLINE | INACTIVE | OFFLINE
-    (this.http.get(`/app/v1/presence/realtime/${this.contactId}`, { responseType: 'text' }) as any)
-      .subscribe({
-        next: (raw: string) => {
-          let status = 'OFFLINE';
-          if (!raw) {
-            status = 'OFFLINE';
-          } else {
-            const text = raw.trim();
-            // intentar parsear JSON si viene como objeto/array
-            if ((text.startsWith('{') || text.startsWith('['))) {
-              try {
-                const parsed = JSON.parse(text);
-                // si es array de sesiones, priorizar ONLINE > INACTIVE > OFFLINE
-                if (Array.isArray(parsed)) {
-                  const hasOnline = parsed.some((s: any) => (s.status || s) === 'ONLINE');
-                  const hasInactive = parsed.some((s: any) => (s.status || s) === 'INACTIVE');
-                  status = hasOnline ? 'ONLINE' : hasInactive ? 'INACTIVE' : 'OFFLINE';
-                } else if (parsed && typeof parsed === 'object') {
-                  status = parsed.status || parsed.presence || 'OFFLINE';
-                } else {
-                  status = String(parsed) as any || 'OFFLINE';
-                }
-              } catch (e) {
-                status = text as any;
+    // usar PresenceService que puede devolver texto o JSON y normalizar
+    this.presenceService.getUserPresence(this.contactId).subscribe({
+      next: (raw: any) => {
+        let status = 'OFFLINE';
+        if (!raw) {
+          status = 'OFFLINE';
+        } else {
+          // raw puede venir como texto o json
+          try {
+            const text = String(raw).trim();
+            if (text.startsWith('{') || text.startsWith('[')) {
+              const parsed = JSON.parse(text);
+              if (Array.isArray(parsed)) {
+                const hasOnline = parsed.some((s: any) => (s.status || s) === 'ONLINE');
+                const hasInactive = parsed.some((s: any) => (s.status || s) === 'INACTIVE');
+                status = hasOnline ? 'ONLINE' : hasInactive ? 'INACTIVE' : 'OFFLINE';
+              } else if (parsed && typeof parsed === 'object') {
+                status = parsed.status || parsed.presence || 'OFFLINE';
+              } else {
+                status = String(parsed) as any || 'OFFLINE';
               }
             } else {
               status = text as any;
             }
+          } catch (e) {
+            status = String(raw) as any;
           }
-
-          // normalizar
-          if (status !== 'ONLINE' && status !== 'INACTIVE') status = 'OFFLINE';
-          this.contactPresence = status;
-          this.cdr.detectChanges();
-        },
-        error: () => {
-          this.contactPresence = 'OFFLINE';
-          this.cdr.detectChanges();
         }
-      });
+
+        if (status !== 'ONLINE' && status !== 'INACTIVE') status = 'OFFLINE';
+        this.contactPresence = status;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.contactPresence = 'OFFLINE';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // =======================
@@ -524,6 +531,39 @@ export class ChatThread implements OnInit, OnDestroy {
   openAttachment(url: string): void {
     if (!url) return;
     window.open(url, '_blank');
+  }
+
+  // =======================
+  //   PERFIL DEL CONTACTO
+  // =======================
+  openProfilePreview(): void {
+    if (!this.contactId) return;
+
+    this.showProfilePreview = true;
+    this.previewLoading = true;
+    this.cdr.detectChanges();
+
+    this.userService.getUserById(this.contactId).subscribe({
+      next: (user) => {
+        this.profilePreview = {
+          ...user,
+          avatarUrl: user.avatarUrl || user.photoUrl || (user as any)?.photoUrl || (user as any)?.photo?.url
+        };
+        this.previewLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error cargando perfil del contacto', err);
+        this.previewLoading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  closeProfilePreview(): void {
+    this.showProfilePreview = false;
+    this.profilePreview = null;
+    this.cdr.detectChanges();
   }
 
   // =======================

@@ -4,12 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { SessionService } from '../../../Service/session.service';
 import { ChannelsMsgModel } from '../../../Model/channels-msg-model';
 import { MemberModel } from '../../../Model/member-model';
-import { Subscription } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
+import { startWith, switchMap } from 'rxjs/operators';
 import { ChannelsMsgService } from '../../../Service/channels-msg.service';
 import { ChannelsService } from '../../../Service/channels.service';
 import { RealtimeService } from '../../../Service/realtime.service';
 import { ActivatedRoute } from '@angular/router';
 import { UserService } from '../../../Service/user.service';
+import { PresenceService } from '../../../Service/presence.service';
+import { UserProfileEventsService } from '../../../Service/user-profile-events.service';
 
 @Component({
   selector: 'app-channels-thread',
@@ -24,6 +27,10 @@ export class ChannelsThread implements OnInit, OnDestroy {
   private wsChannelSub?: Subscription;
   //WS para eventos de miembros (online/offline)
   private wsEventsSub?: Subscription;
+  // Polling para presencia
+  private presenceSub?: Subscription;
+  // Eventos globales de actualización de perfil
+  private profileEventsSub?: Subscription;
 
   private sessionService = inject(SessionService);
   private cdr = inject(ChangeDetectorRef);
@@ -46,6 +53,8 @@ export class ChannelsThread implements OnInit, OnDestroy {
     private realtime: RealtimeService,
     private route: ActivatedRoute,
     private userService: UserService,
+    private presenceService: PresenceService,
+    private profileEvents: UserProfileEventsService,
   ) {}
 
   ngOnInit(): void {
@@ -54,11 +63,25 @@ export class ChannelsThread implements OnInit, OnDestroy {
     if (idFromRoute) this.channelId = idFromRoute;
 
     this.initSession();
+    // reaccionar cuando alguien actualice su perfil (avatar/username)
+    this.profileEventsSub = this.profileEvents.profileUpdate$.subscribe((userId) => {
+      const member = this.membersInfo.find(m => m.userId === userId);
+      if (member) {
+        // refrescar datos para ese usuario
+        this.userService.getUserById(userId).subscribe(u => {
+          member.username = u.username || member.username;
+          member.avatarUrl = u.photoUrl || u.avatarUrl || member.avatarUrl;
+          this.cdr.detectChanges();
+        });
+      }
+    });
   }
 
   ngOnDestroy(): void {
     this.wsChannelSub?.unsubscribe();
     this.wsEventsSub?.unsubscribe();
+    this.presenceSub?.unsubscribe();
+    this.profileEventsSub?.unsubscribe();
   }
 
   private initSession(): void {
@@ -118,14 +141,31 @@ export class ChannelsThread implements OnInit, OnDestroy {
       // --- Llamada optimizada para obtener usernames reales ---
       if (channel.members.length > 0) {
         this.userService.getUsersByIds(channel.members).subscribe(users => {
-          // Reemplazar placeholders con los nombres reales
+          // Reemplazar placeholders con los nombres reales y avatares
           this.membersInfo = this.membersInfo.map(m => {
             const u = users.find(user => user.id === m.userId);
             return {
               ...m,
-              username: u?.username || m.username
+              username: u?.username || m.username,
+              avatarUrl: u?.avatarUrl || u?.photoUrl || undefined
             };
           });
+
+          // Iniciar polling de presencia cada 5 segundos
+          this.presenceSub?.unsubscribe();
+          this.presenceSub = interval(5000)
+            .pipe(
+              startWith(0),
+              switchMap(() => this.presenceService.getBulkPresence(channel.members))
+            )
+            .subscribe((presenceMap: Record<string, string>) => {
+              this.membersInfo.forEach(m => {
+                m.online = presenceMap[m.userId] === 'ONLINE';
+              });
+              this.updateOnlineMembers();
+              this.cdr.detectChanges();
+            });
+
           this.cdr.detectChanges(); // actualizar la vista
         });
       }
