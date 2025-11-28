@@ -1,9 +1,12 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AuthService } from '../../../Service/AuthService';
 import { Router } from '@angular/router';
 import { ToastService } from '../../../Shared/toast.service';
+import { UserAvailabilityService } from '../../../Service/UserAvailabilityService';
+import { take, timeout } from 'rxjs/operators';
+import { TimeoutError } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -25,7 +28,9 @@ export class LoginComponent implements OnInit {
     private fb: FormBuilder,
     private auth: AuthService,
     private router: Router,
-    private toast: ToastService
+    private toast: ToastService,
+    private availability: UserAvailabilityService
+    , private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -52,7 +57,37 @@ export class LoginComponent implements OnInit {
 
     this.isLoading = true;
     this.message = null;
+    // Check email existence but guard against hanging by timing out after 3s
+    this.availability.checkEmailAvailability(payload.identifier).pipe(
+      take(1),
+      timeout(3000)
+    ).subscribe({
+      next: (available) => {
+        // Si está disponible=true => NO existe en la BD
+        if (available === true) {
+          this.isLoading = false;
+          this.message = 'El correo no está registrado.';
+          // No mostrar toast aquí por petición de UX; el mensaje ya aparece en la UI.
+          this.cdr.detectChanges();
+          return;
+        }
+        // email exists -> proceed to login
+        this.performLogin(payload);
+      },
+      error: (err: any) => {
+        this.isLoading = false;
+        if (err instanceof TimeoutError || err?.name === 'TimeoutError') {
+          this.message = 'La verificación tardó demasiado. Intenta de nuevo.';
+        } else {
+          this.message = 'No se pudo verificar el correo. Intenta de nuevo.';
+        }
+        this.toast.show(this.message, 'error');
+        this.cdr.detectChanges();
+      }
+    });
+  }
 
+  private performLogin(payload: { identifier: string; password: string }): void {
     this.auth.login(payload).subscribe({
       next: (res: any) => {
         this.isLoading = false;
@@ -77,6 +112,7 @@ export class LoginComponent implements OnInit {
         }
 
         this.toast.show(this.message ?? '', 'error');
+        this.cdr.detectChanges();
       }
     });
   }
